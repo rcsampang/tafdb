@@ -142,3 +142,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Static files (CSS, JavaScript, Images) for Docker and Nginx
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Ensure MEDIA_URL and MEDIA_ROOT are defined (should be from previous steps)
+MEDIA_URL = '/media/' # Ensure it's there
+MEDIA_ROOT = BASE_DIR / 'media' # Ensure it's there

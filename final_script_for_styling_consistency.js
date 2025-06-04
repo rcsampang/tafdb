@@ -1,98 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COAST TAF Contracting Database</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-gray-100 font-sans">
-    <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="sidebar w-64 bg-blue-800 text-white p-6 space-y-4 fixed top-0 left-0 h-full overflow-y-auto hidden">
-            <div class="text-2xl font-semibold mb-6">TAF Database</div>
-            <nav class="space-y-2">
-                <a href="#" id="navDashboard" class="nav-link active-link group"><i class="fas fa-tachometer-alt mr-3"></i>Dashboard</a>
-                <a href="#" id="navAllRecords" class="nav-link group"><i class="fas fa-list mr-3"></i>All TA Records</a>
-                <a href="#" id="navOngoingRecords" class="nav-link group"><i class="fas fa-spinner mr-3"></i>Ongoing TA</a>
-                <a href="#" id="navClosedRecords" class="nav-link group"><i class="fas fa-check-circle mr-3"></i>Closed TA</a>
-                <a href="#" id="navExperts" class="nav-link group"><i class="fas fa-users-cog mr-3"></i>Experts</a>
-                <a href="#" id="navTemplates" class="nav-link group"><i class="fas fa-file-alt mr-3"></i>Templates</a>
-            </nav>
-            <button id="openAddNewRecordFormBtnSidebar" class="btn-primary w-full mt-6 py-2.5 px-4 rounded-lg inline-flex items-center justify-center" style="display: none;">
-                <i class="fas fa-plus-circle mr-2"></i> Add New Record
-            </button>
-            <!-- Logout button will be appended here by JS if user is logged in -->
-        </aside>
-
-        <!-- Main Content Area -->
-        <div class="main-content flex-1 flex flex-col ml-64"> <!-- Added ml-64 for when sidebar is shown -->
-            <header class="bg-white shadow-md p-6 flex justify-between items-center">
-                <h1 id="currentViewTitle" class="text-2xl font-semibold text-gray-700">Dashboard</h1>
-                <!-- Login button will be added here by JS if user is not logged in -->
-            </header>
-
-            <main class="flex-1 p-8 overflow-y-auto">
-                <!-- Dashboard View -->
-                <section id="dashboardView" class="space-y-8">
-                    <!-- Content will be loaded by JS -->
-                </section>
-
-                <!-- TA Records List View -->
-                <section id="taRecordsView" class="hidden">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-700">TA Records</h2>
-                        <button id="openAddNewRecordBtnTARecords" class="btn-primary py-2 px-4 rounded-lg inline-flex items-center" style="display: none;">
-                            <i class="fas fa-plus-circle mr-2"></i> Add New Record
-                        </button>
-                    </div>
-                    <div id="taFilters" class="mb-6 p-4 bg-white rounded-lg shadow">
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <div>
-                                <label for="filterCountry" class="block text-sm font-medium text-gray-700">Country</label>
-                                <select id="filterCountry" name="filterCountry" multiple class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-32">
-                                    <option value="Philippines">Philippines</option><option value="Indonesia">Indonesia</option><option value="Vietnam">Vietnam</option><option value="Mozambique">Mozambique</option><option value="Other Countries">Other Countries</option>
-                                </select>
-                            </div>
-                            <div><label for="filterExpert" class="block text-sm font-medium text-gray-700">Expert/Institution</label><input type="text" id="filterExpert" name="filterExpert" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
-                            <div>
-                                <label for="filterTheme" class="block text-sm font-medium text-gray-700">Theme</label>
-                                <select id="filterTheme" name="filterTheme" multiple class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-32">
-                                    <option value="Sustainable fisheries">Sustainable fisheries</option><option value="Sustainable Aquaculture">Sustainable Aquaculture</option><option value="Critical Marine Habitats">Critical Marine Habitats</option><option value="Blue Economy">Blue Economy</option><option value="Livelihoods">Livelihoods</option><option value="GEDSI">GEDSI</option><option value="Climate Change Adaptation">Climate Change Adaptation</option><option value="Others">Others</option>
-                                </select>
-                            </div>
-                            <div><label for="filterArea" class="block text-sm font-medium text-gray-700">Area (Province/Region)</label><input type="text" id="filterArea" name="filterArea" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
-                            <div>
-                                <label for="filterTypeOfTA" class="block text-sm font-medium text-gray-700">Type of TA</label>
-                                <select id="filterTypeOfTA" name="filterTypeOfTA" multiple class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-32">
-                                    <option value="Capacity-building">Capacity-building</option><option value="Research">Research</option><option value="Policy Support">Policy Support</option><option value="Technical Advice">Technical Advice</option><option value="Others">Others</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex justify-end space-x-3"><button id="resetFiltersBtn" class="btn-secondary py-2 px-4 rounded-lg">Reset Filters</button><button id="applyFiltersBtn" class="btn-primary py-2 px-4 rounded-lg">Apply Filters</button></div>
-                    </div>
-                    <div class="bg-white shadow overflow-hidden sm:rounded-lg"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Area</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th></tr></thead><tbody id="taRecordsTableBody" class="bg-white divide-y divide-gray-200"></tbody></table><div id="noRecordsMessage" class="text-center p-4 text-gray-500 hidden">No records found.</div></div>
-                    <div id="paginationControls" class="mt-4 flex justify-center items-center space-x-2"></div>
-                </section>
-
-                <section id="expertsView" class="hidden"><h2 class="text-xl font-semibold text-gray-700 mb-6">Experts</h2><div class="bg-white shadow overflow-hidden sm:rounded-lg"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expertise</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consortium Member</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th></tr></thead><tbody id="expertsTableBody" class="bg-white divide-y divide-gray-200"></tbody></table><div id="noExpertsMessage" class="text-center p-4 text-gray-500 hidden">No experts found.</div></div><div id="expertsPaginationControls" class="mt-4 flex justify-center items-center space-x-2"></div></section>
-
-                <section id="templatesView" class="hidden"><div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold text-gray-700">Document Templates</h2><button id="openUploadTemplateFormBtn" class="btn-primary py-2 px-4 rounded-lg inline-flex items-center"><i class="fas fa-upload mr-2"></i> Upload Template</button></div><div id="templateListContainer" class="space-y-6"></div><div id="noTemplatesMessage" class="text-center p-4 text-gray-500 hidden">No templates found.</div></section>
-
-                <section id="taRecordFormSection" class="hidden p-6 bg-white rounded-lg shadow-lg relative"><h2 id="formSectionTitle" class="text-xl font-semibold text-gray-800 mb-6">Add New TA Record</h2><button id="cancelFormSectionBtn" class="absolute top-4 right-4 text-gray-600 hover:text-gray-800"><i class="fas fa-times-circle fa-lg"></i></button><form id="taRecordForm" class="space-y-6"><input type="hidden" id="recordId"><div><label for="title" class="form-label">Title:</label><input type="text" id="title" required class="form-input"></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="area" class="form-label">Area (Province/Region):</label><input type="text" id="area" class="form-input"></div><div><label for="scope" class="form-label">Scope:</label><select id="scope" class="form-input"><option value="regional">Regional</option><option value="national">National</option><option value="City/Municipal">City/Municipal</option><option value="site-level">Site-level</option></select></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="startDate" class="form-label">Start Date:</label><input type="date" id="startDate" required class="form-input"></div><div><label for="endDate" class="form-label">End Date (Optional):</label><input type="date" id="endDate" class="form-input"></div></div><div><label for="location" class="form-label">Specific Location (if applicable):</label><input type="text" id="location" class="form-input"></div><div><label for="country" class="form-label">Country:</label><select id="country" class="form-input"><option value="Philippines">Philippines</option><option value="Indonesia">Indonesia</option><option value="Vietnam">Vietnam</option><option value="Mozambique">Mozambique</option><option value="Other Countries">Other Countries</option></select></div><div><label for="typeOfTA" class="form-label">Type of TA:</label><select id="typeOfTA" class="form-input"><option value="Capacity-building">Capacity-building</option><option value="Research">Research</option><option value="Policy Support">Policy Support</option><option value="Technical Advice">Technical Advice</option><option value="Others">Others</option></select></div><div id="typeOfTAOtherContainer" class="hidden"><label for="typeOfTAOtherDetails" class="form-label">Other Type of TA Details:</label><textarea id="typeOfTAOtherDetails" class="form-input"></textarea></div><div><label for="theme" class="form-label">Theme(s):</label><select id="theme" multiple class="form-input h-40"><option value="Sustainable fisheries">Sustainable fisheries</option><option value="Sustainable Aquaculture">Sustainable Aquaculture</option><option value="Critical Marine Habitats">Critical Marine Habitats</option><option value="Blue Economy">Blue Economy</option><option value="Livelihoods">Livelihoods</option><option value="GEDSI">GEDSI</option><option value="Climate Change Adaptation">Climate Change Adaptation</option><option value="Others">Others</option></select></div><div id="themeOtherContainer" class="hidden"><label for="themeOtherDetails" class="form-label">Other Theme Details:</label><textarea id="themeOtherDetails" class="form-input"></textarea></div><div class="flex items-center"><input type="checkbox" id="expertsInvolved" class="form-checkbox"><label for="expertsInvolved" class="ml-2">Experts/Institutions Involved?</label></div><div id="expertsDetailsContainer" class="hidden"><label for="expertsDetails" class="form-label">Details of Experts/Institutions:</label><textarea id="expertsDetails" class="form-input"></textarea></div><div><label for="remarks" class="form-label">Remarks:</label><textarea id="remarks" class="form-input"></textarea></div><div id="formFileManagementSection" class="mt-6 border-t pt-6"><h3 class="text-lg font-medium text-gray-700 mb-3">Manage Files</h3><div id="formFileTabsContainer" class="mb-4 border-b border-gray-200 flex space-x-1"></div><div id="formFileTabContentContainer"></div></div><div class="flex justify-end space-x-4 mt-8"><button type="button" id="cancelFormSectionBtnBottom" class="btn-secondary">Cancel</button><button type="submit" class="btn-primary">Save Record</button></div></form></section>
-
-                <section id="uploadTemplateFormSection" class="hidden p-6 bg-white rounded-lg shadow-lg relative"><h2 id="uploadTemplateFormTitle" class="text-xl font-semibold text-gray-800 mb-6">Upload New Template</h2><button id="cancelUploadTemplateBtn" class="absolute top-4 right-4 text-gray-600 hover:text-gray-800"><i class="fas fa-times-circle fa-lg"></i></button><form id="uploadTemplateForm" class="space-y-6"><div><label for="templateName" class="form-label">Template Name:</label><input type="text" id="templateName" required class="form-input"></div><div><label for="templateCategory" class="form-label">Category:</label><select id="templateCategory" class="form-input"></select></div><div><label for="templateFile" class="form-label">File:</label><input type="file" id="templateFile" required class="form-input"></div><div class="flex justify-end space-x-4 mt-8"><button type="button" id="cancelUploadTemplateBtnBottom" class="btn-secondary">Cancel</button><button type="submit" class="btn-primary">Upload Template</button></div></form></section>
-
-                <section id="viewRecordPageSection" class="hidden p-6 bg-white rounded-lg shadow-lg relative"><div class="flex justify-between items-center mb-6"><h2 id="viewRecordPageTitle" class="text-xl font-semibold text-gray-800">TA Record Details</h2><button id="closeViewRecordPageBtn" class="text-gray-600 hover:text-gray-800"><i class="fas fa-times-circle fa-lg mr-1"></i>Close</button></div><div id="viewRecordDetailsContainer" class="space-y-4"></div><div id="viewRecordFileManagementSection" class="mt-6 border-t pt-6 hidden"><h3 class="text-lg font-medium text-gray-700 mb-3">Attached Files</h3><div id="viewRecordFileTabsContainer" class="mb-4 border-b border-gray-200 flex space-x-1"></div><div id="viewRecordFileTabContentContainer"></div></div></section>
-            </main>
-        </div>
-    </div>
-
-    <div id="confirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden px-4"><div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto"><h3 id="confirmationTitle" class="text-xl font-semibold text-gray-800 mb-4">Confirm Action</h3><p id="confirmationMessage" class="text-gray-600 mb-6">Are you sure?</p><div class="flex justify-end space-x-4"><button id="cancelConfirmationBtn" class="btn-secondary">Cancel</button><button id="confirmActionBtn" class="btn-danger">Confirm</button></div></div></div>
-
-<script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- START: Core Variables and API Config ---
     // (Same as previous full script)
@@ -122,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END: Core Variables and API Config ---
 
     // --- START: DOM Element References ---
-    // (Same as previous full script, ensure dashboard elements are included)
+    // (Same as previous full script)
     const navDashboard = document.getElementById('navDashboard');
     const navAllRecords = document.getElementById('navAllRecords');
     const navOngoingRecords = document.getElementById('navOngoingRecords');
@@ -130,13 +35,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const navExperts = document.getElementById('navExperts');
     const navTemplates = document.getElementById('navTemplates');
     const navLinks = { dashboard: navDashboard, all: navAllRecords, ongoing: navOngoingRecords, closed: navClosedRecords, experts: navExperts, templates: navTemplates };
-
     const openAddNewRecordFormBtnSidebar = document.getElementById('openAddNewRecordFormBtnSidebar');
     const openAddNewRecordBtnTARecords = document.getElementById('openAddNewRecordBtnTARecords');
     const currentViewTitle = document.getElementById('currentViewTitle');
     let logoutButton = document.getElementById('logoutButton');
     let loginButton = document.getElementById('loginButton');
-
     const taRecordFormSection = document.getElementById('taRecordFormSection');
     const taRecordForm = document.getElementById('taRecordForm');
     const formSectionTitle = document.getElementById('formSectionTitle');
@@ -163,11 +66,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const formFileManagementSection = document.getElementById('formFileManagementSection');
     const formFileTabsContainer = document.getElementById('formFileTabsContainer');
     const formFileTabContentContainer = document.getElementById('formFileTabContentContainer');
-
     const taRecordsTableBody = document.getElementById('taRecordsTableBody');
-    // const noRecordsMessage = document.getElementById('noRecordsMessage'); // Already defined
+    const noRecordsMessage = document.getElementById('noRecordsMessage');
     const paginationControls = document.getElementById('paginationControls');
-
     const viewRecordPageSection = document.getElementById('viewRecordPageSection');
     const viewRecordPageTitle = document.getElementById('viewRecordPageTitle');
     const viewRecordDetailsContainer = document.getElementById('viewRecordDetailsContainer');
@@ -175,17 +76,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const viewRecordFileManagementSection = document.getElementById('viewRecordFileManagementSection');
     const viewRecordFileTabsContainer = document.getElementById('viewRecordFileTabsContainer');
     const viewRecordFileTabContentContainer = document.getElementById('viewRecordFileTabContentContainer');
-
     const dashboardView = document.getElementById('dashboardView');
     const taRecordsView = document.getElementById('taRecordsView');
     const expertsView = document.getElementById('expertsView');
     const templatesView = document.getElementById('templatesView');
     const uploadTemplateFormSection = document.getElementById('uploadTemplateFormSection');
-
     const expertsTableBody = document.getElementById('expertsTableBody');
-    // const noExpertsMessage = document.getElementById('noExpertsMessage'); // Already defined
+    const noExpertsMessage = document.getElementById('noExpertsMessage');
     const expertsPaginationControls = document.getElementById('expertsPaginationControls');
-
     const filterCountry = document.getElementById('filterCountry');
     const filterExpert = document.getElementById('filterExpert');
     const filterTheme = document.getElementById('filterTheme');
@@ -193,9 +91,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterTypeOfTA = document.getElementById('filterTypeOfTA');
     const applyFiltersBtn = document.getElementById('applyFiltersBtn');
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
-
     const templateListContainer = document.getElementById('templateListContainer');
-    const noTemplatesMessage = document.getElementById('noTemplatesMessage'); // Specific for templates
+    const noTemplatesMsg = document.getElementById('noTemplatesMessage'); // Renamed for consistency
     const openUploadTemplateFormBtn = document.getElementById('openUploadTemplateFormBtn');
     const uploadTemplateForm = document.getElementById('uploadTemplateForm');
     const uploadTemplateFormTitle = document.getElementById('uploadTemplateFormTitle');
@@ -204,16 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const templateNameField = document.getElementById('templateName');
     const templateCategoryField = document.getElementById('templateCategory');
     const templateFileField = document.getElementById('templateFile');
-
-    // Dashboard specific DOM elements (ensure they exist in index.html)
-    // These will be re-queried in renderDashboard after setting innerHTML
-    // const statTotalTAs = document.getElementById('statTotalTAs');
-    // const statOngoingTAs = document.getElementById('statOngoingTAs');
-    // const statClosedTAs = document.getElementById('statClosedTAs');
-    // const chartCountryContainer = document.getElementById('chartCountry');
-    // const chartThemeContainer = document.getElementById('chartTheme');
-
-
     const confirmationModal = document.getElementById('confirmationModal');
     const confirmationTitle = document.getElementById('confirmationTitle');
     const confirmationMessage = document.getElementById('confirmationMessage');
@@ -223,7 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END: DOM Element References ---
 
     // --- START: Generic Helper Functions ---
-    // (Definitions as before)
     const getSelectedOptions = function(selectElement) { if(!selectElement) return []; return Array.from(selectElement.selectedOptions).map(function(option) { return option.value; }); };
     const setSelectedOptions = function(selectElement, values) { if (!selectElement || !values || !Array.isArray(values)) values = []; Array.from(selectElement.options).forEach(function(option) { option.selected = values.includes(option.value); }); };
     const formatDate = function(dateString) { if (!dateString) return 'N/A'; return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }); };
@@ -233,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END: Generic Helper Functions ---
 
     // --- START: API Request Function ---
-    // (Definition as before)
     async function apiRequest(url, method = 'GET', data = null, isFormData = false) {
         const headers = {}; if (authToken) { headers['Authorization'] = 'Token ' + authToken; }
         if (!isFormData && data) { headers['Content-Type'] = 'application/json'; }
@@ -252,14 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END: API Request Function ---
 
     // --- START: Auth Functions ---
-    // (Definitions as before)
-    function createLoginButton() { /* ... */ } function createLogoutButton() { /* ... */ }
-    function showLoginForm() { /* ... */ } function reloadApp(){ /* ... */ }
-    async function loginUser(username, password) { /* ... */ }
-    async function logoutUser(promptLogin = true) { /* ... */ }
-    async function fetchCurrentUser() { /* ... */ }
-    function updateUIForAuthState() { /* ... */ }
-    // (Full definitions for Auth functions as previously successful)
     function createLoginButton() { if (document.getElementById('loginButton')) return; loginButton = document.createElement('button'); loginButton.id = 'loginButton'; loginButton.textContent = 'Login'; loginButton.classList.add('btn-primary', 'py-2', 'px-4', 'rounded-lg', 'fixed', 'top-4', 'right-4', 'z-50'); loginButton.addEventListener('click', showLoginForm); document.body.appendChild(loginButton);}
     function createLogoutButton() { if (document.getElementById('logoutButton')) return; logoutButton = document.createElement('button'); logoutButton.id = 'logoutButton'; logoutButton.textContent = 'Logout'; logoutButton.classList.add('btn-secondary', 'py-2', 'px-4', 'rounded-lg', 'text-sm', 'mt-auto'); const sb = document.querySelector('.sidebar'); if (sb) { sb.appendChild(logoutButton); } else { document.body.insertBefore(logoutButton, document.body.firstChild); } logoutButton.addEventListener('click', function() { logoutUser(); });}
     function showLoginForm() { const main = document.querySelector('main'); if(main)main.innerHTML='<div class="p-8"><h1>Please Log In</h1></div>'; const u=prompt("Username:"); if(u===null){reloadApp();return;} const p=prompt("Password:"); if(p===null){reloadApp();return;} loginUser(u,p); }
@@ -271,15 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END: Auth Functions ---
 
     // --- START: TAF Record Form Functions ---
-    // (Definitions as before)
-    function openTaRecordFormPage(isEditing = false, recordToEdit = null) { /* ... */ }
-    function closeTaRecordFormPage() { /* ... */ }
-    async function handleFormFileUploads(recordId) { /* ... */ }
-    function renderFileTabsInForm() { /* ... */ }
-    function switchFileTabInForm(category) { /* ... */ }
-    function handleFileUploadInFormEvent(event) { /* ... */ }
-    function handleDeleteFileInFormEvent(event) { /* ... */ }
-    // (Full definitions for TAF form functions as previously successful)
     function openTaRecordFormPage(isEditing=false,recordToEdit=null){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");if(typeof switchView==='function')switchView(previousActiveView||'all');return;}if(!taRecordForm||!formSectionTitle){console.error("TAF Form elements missing!");return;}formSectionTitle.textContent=isEditing?\`Edit TA Record - ID: \${recordToEdit.id}\`:'Add New TA Record';editingRecordId=isEditing?recordToEdit.id:null;taRecordForm.reset();currentFilesForForm=[];if(isEditing&&recordToEdit){if(recordIdField)recordIdField.value=recordToEdit.id;if(titleField)titleField.value=recordToEdit.title;if(areaField)areaField.value=recordToEdit.area||'';if(scopeField)scopeField.value=recordToEdit.scope;if(startDateField)startDateField.value=recordToEdit.start_date;if(endDateField)endDateField.value=recordToEdit.end_date||'';if(locationField)locationField.value=recordToEdit.location||'';if(countryField)countryField.value=recordToEdit.country;if(typeOfTAField)typeOfTAField.value=recordToEdit.type_of_ta;if(typeOfTAOtherDetailsField)typeOfTAOtherDetailsField.value=recordToEdit.type_of_ta_other_details||'';if(themeField)setSelectedOptions(themeField,recordToEdit.themes_list||(recordToEdit.themes_text?recordToEdit.themes_text.split(',').map(function(s){return s.trim();}):[]));if(themeOtherDetailsField)themeOtherDetailsField.value=recordToEdit.theme_other_details||'';if(expertsInvolvedField)expertsInvolvedField.checked=recordToEdit.experts_involved_flag;if(expertsDetailsField)expertsDetailsField.value=recordToEdit.experts_details_text||'';if(remarksField)remarksField.value=recordToEdit.remarks||'';if(recordToEdit.attachments&&Array.isArray(recordToEdit.attachments)){currentFilesForForm=recordToEdit.attachments.map(function(att){return{id:att.id,name:att.file_name||(att.file?att.file.split('/').pop():'file'),category:att.category,existing:true,deleted:false,url:att.file_url};});}} if(typeOfTAField&&typeOfTAOtherContainer)typeOfTAOtherContainer.classList.toggle('hidden',typeOfTAField.value!=='Others');if(themeField&&themeOtherContainer)themeOtherContainer.classList.toggle('hidden',!getSelectedOptions(themeField).includes('Others'));if(expertsInvolvedField&&expertsDetailsContainer)expertsDetailsContainer.classList.toggle('hidden',!expertsInvolvedField.checked);renderFileTabsInForm();if(typeof switchView==='function')switchView('taRecordForm');else if(taRecordFormSection)taRecordFormSection.classList.remove('hidden');}
     function closeTaRecordFormPage(){if(taRecordForm)taRecordForm.reset();editingRecordId=null;currentFilesForForm=[];if(typeOfTAOtherContainer)typeOfTAOtherContainer.classList.add('hidden');if(themeOtherContainer)themeOtherContainer.classList.add('hidden');if(expertsDetailsContainer)expertsDetailsContainer.classList.add('hidden');if(formFileTabsContainer)formFileTabsContainer.innerHTML='';if(formFileTabContentContainer)formFileTabContentContainer.innerHTML='';if(typeof switchView==='function')switchView(previousActiveView||'all');}
     if(cancelFormSectionBtn)cancelFormSectionBtn.addEventListener('click',closeTaRecordFormPage);if(cancelFormSectionBtnBottom)cancelFormSectionBtnBottom.addEventListener('click',closeTaRecordFormPage);if(openAddNewRecordFormBtnSidebar)openAddNewRecordFormBtnSidebar.addEventListener('click',function(){openTaRecordFormPage(false,null);});if(openAddNewRecordBtnTARecords)openAddNewRecordBtnTARecords.addEventListener('click',function(){openTaRecordFormPage(false,null);});
@@ -295,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END: TAF Record Form Functions ---
 
     // --- START: TAF Record Listing & Viewing Functions ---
-    // (Updated action buttons for styling consistency)
     async function renderTable(page=1,viewType=activeView||'all'){if(!currentUser){if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8" class="text-center p-4">Please log in.</td></tr>';return;}if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8" class="text-center p-4">Loading...</td></tr>';if(noRecordsMessage)noRecordsMessage.classList.add('hidden');taRecordsCurrentPage=page;let url=new URL(TAF_RECORDS_URL,window.location.origin);url.searchParams.append('page',page);url.searchParams.append('page_size',ITEMS_PER_PAGE);const todayStr=getCurrentDate().toISOString().split('T')[0];if(viewType==='ongoing'){url.searchParams.append('end_date__isnull','true');}else if(viewType==='closed'){url.searchParams.append('end_date__lt',todayStr);url.searchParams.append('end_date__isnull','false');} if(filterCountry&&getSelectedOptions(filterCountry).length>0)url.searchParams.append('country__in',getSelectedOptions(filterCountry).join(','));if(filterExpert&&filterExpert.value.trim())url.searchParams.append('experts_details_text__icontains',filterExpert.value.trim());if(filterTheme&&getSelectedOptions(filterTheme).length>0)getSelectedOptions(filterTheme).forEach(function(t){url.searchParams.append('themes_text__icontains',t);});if(filterArea&&filterArea.value.trim())url.searchParams.append('area__icontains',filterArea.value.trim());if(filterTypeOfTA&&getSelectedOptions(filterTypeOfTA).length>0)url.searchParams.append('type_of_ta__in',getSelectedOptions(filterTypeOfTA).join(','));url.searchParams.append('ordering','-created_at');try{const data=await apiRequest(url.toString());const records=data.results;if(taRecordsTableBody)taRecordsTableBody.innerHTML='';if(!records||records.length===0){if(noRecordsMessage)noRecordsMessage.classList.remove('hidden');renderPaginationControlsUI(0,page,paginationControls,function(np){renderTable(np,viewType);});return;} records.forEach(function(rec){const r=document.createElement('tr');r.classList.add('border-b','hover:bg-gray-50');r.innerHTML=\`<td class="px-6 py-4"><span class="clickable-id text-blue-600 hover:underline" data-id="\${rec.id}">\${rec.id}</span></td><td class="px-6 py-4 truncate" title="\${rec.title}">\${rec.title}</td><td class="px-6 py-4">\${rec.country}</td><td class="px-6 py-4 truncate" title="\${rec.area||''}">\${rec.area||'N/A'}</td><td class="px-6 py-4">\${rec.scope}</td><td class="px-6 py-4">\${formatDate(rec.start_date)}</td><td class="px-6 py-4">\${formatDate(rec.end_date)}</td><td class="px-6 py-4 flex space-x-2 items-center"><button class="view-btn text-gray-700 hover:text-blue-600 p-1 rounded hover:bg-gray-100" data-id="\${rec.id}" title="View"><i class="fas fa-eye"></i></button>\${currentUser.profile.user_type==='admin'?\`<button class="edit-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-gray-100" data-id="\${rec.id}" title="Edit"><i class="fas fa-edit"></i></button><button class="delete-btn text-red-600 hover:text-red-800 p-1 rounded hover:bg-gray-100" data-id="\${rec.id}" title="Delete"><i class="fas fa-trash-alt"></i></button>\` : ''}</td>\`;taRecordsTableBody.appendChild(r);});renderPaginationControlsUI(data.count,page,paginationControls,function(np){renderTable(np,viewType);});addTableActionListeners(records);}catch(e){if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8" class="text-center p-4 text-red-500">Failed to load records.</td></tr>';console.error("Render table failed",e);}}
     function addTableActionListeners(records){document.querySelectorAll('.edit-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return;const id=parseInt(e.currentTarget.dataset.id);const rec=records.find(function(r){return r.id===id;});if(rec)openTaRecordFormPage(true,rec);});});document.querySelectorAll('.delete-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return;const id=parseInt(e.currentTarget.dataset.id);openConfirmationModal('Delete Record', \`Are you sure you want to delete record ID \${id}?\`,function(){deleteRecord(id);});});});document.querySelectorAll('.view-btn, .clickable-id').forEach(function(b){b.addEventListener('click',function(e){const id=parseInt(e.currentTarget.dataset.id);openViewRecordPageById(id);});});}
     async function deleteRecord(id){if(currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}try{await apiRequest(\`\${TAF_RECORDS_URL}\${id}/\`,'DELETE');closeConfirmationModal();renderTable(taRecordsCurrentPage,activeView);}catch(e){alert("Error deleting record.");}}
@@ -353,7 +220,5 @@ document.addEventListener('DOMContentLoaded', function() {
     async function initializeApp(){createLoginButton();createLogoutButton();authToken=localStorage.getItem('authToken');const storedUserJSON=localStorage.getItem('currentUser');if(storedUserJSON){try{currentUser=JSON.parse(storedUserJSON);}catch(e){localStorage.removeItem('currentUser');}}if(authToken){await fetchCurrentUser();} updateUIForAuthState();if(currentUser){switchView('dashboard');}else{updateUIForAuthState();}}
     initializeApp();
     // --- END: Initial Application Setup ---
-});
-</script>
-</body>
-</html>
+});</script>
+>>>>>>> REPLACE

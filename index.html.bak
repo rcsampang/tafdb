@@ -5,44 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COAST TAF Contracting Database</title>
 <script>document.addEventListener('DOMContentLoaded', function() {
-    // --- START: Core Variables and API Config (Common to all parts) ---
+    // --- START: Core Variables and API Config ---
     const API_BASE_URL = '/api';
     const AUTH_LOGIN_URL = API_BASE_URL + '/auth/login/';
     const AUTH_LOGOUT_URL = API_BASE_URL + '/auth/logout/';
     const AUTH_USER_DETAIL_URL = API_BASE_URL + '/auth/me/';
     const TAF_RECORDS_URL = API_BASE_URL + '/taf-records/';
     const ATTACHMENTS_URL = API_BASE_URL + '/attachments/';
-    // const TEMPLATES_URL = API_BASE_URL + '/templates/'; // For later
-    // const EXPERTS_URL = API_BASE_URL + '/experts/'; // For later
-
+    const TEMPLATES_URL = API_BASE_URL + '/templates/';
+    const EXPERTS_URL = API_BASE_URL + '/experts/'; // Added
 
     let authToken = localStorage.getItem('authToken');
     let currentUser = null;
-    let activeView = 'dashboard'; // Default view
+    let activeView = 'dashboard';
     let previousActiveView = 'dashboard';
     let taRecordsCurrentPage = 1;
+    let expertsCurrentPage = 1; // Added
     const ITEMS_PER_PAGE = 10;
     let currentViewRecordId = null;
     let editingRecordId = null;
-    let currentFilesForForm = []; // For tracking files in TAF Record Form
+    let currentFilesForForm = [];
 
     const fileCategories = ["Concept Note", "Terms of Reference", "Full Proposal", "Budget TA Contract", "Deliverables/Milestone Outputs", "Invoices", "Proof of Payment", "Evaluation Report", "References", "Other Files"];
+    const templateCategories = [...fileCategories];
     // --- END: Core Variables and API Config ---
 
-    // --- START: DOM Element References (Common to all parts, ensure all are listed) ---
+    // --- START: DOM Element References ---
+    // (List all DOM elements including those for Experts page)
     const navDashboard = document.getElementById('navDashboard');
     const navAllRecords = document.getElementById('navAllRecords');
     const navOngoingRecords = document.getElementById('navOngoingRecords');
     const navClosedRecords = document.getElementById('navClosedRecords');
-    const navExperts = document.getElementById('navExperts');
+    const navExperts = document.getElementById('navExperts'); // Ensured
     const navTemplates = document.getElementById('navTemplates');
     const navLinks = { dashboard: navDashboard, all: navAllRecords, ongoing: navOngoingRecords, closed: navClosedRecords, experts: navExperts, templates: navTemplates };
 
     const openAddNewRecordFormBtnSidebar = document.getElementById('openAddNewRecordFormBtnSidebar');
     const openAddNewRecordBtnTARecords = document.getElementById('openAddNewRecordBtnTARecords');
     const currentViewTitle = document.getElementById('currentViewTitle');
-    let logoutButton = document.getElementById('logoutButton'); // Will be created if not exists
-    let loginButton = document.getElementById('loginButton'); // Will be created if not exists
+    let logoutButton = document.getElementById('logoutButton');
+    let loginButton = document.getElementById('loginButton');
 
     const taRecordFormSection = document.getElementById('taRecordFormSection');
     const taRecordForm = document.getElementById('taRecordForm');
@@ -71,7 +73,6 @@
     const formFileTabsContainer = document.getElementById('formFileTabsContainer');
     const formFileTabContentContainer = document.getElementById('formFileTabContentContainer');
 
-
     const taRecordsTableBody = document.getElementById('taRecordsTableBody');
     const noRecordsMessage = document.getElementById('noRecordsMessage');
     const paginationControls = document.getElementById('paginationControls');
@@ -84,12 +85,16 @@
     const viewRecordFileTabsContainer = document.getElementById('viewRecordFileTabsContainer');
     const viewRecordFileTabContentContainer = document.getElementById('viewRecordFileTabContentContainer');
 
-    const dashboardView = document.getElementById('dashboardView'); // For switchView
-    const taRecordsView = document.getElementById('taRecordsView'); // For switchView
-    const expertsView = document.getElementById('expertsView'); // For switchView (currently placeholder)
-    const templatesView = document.getElementById('templatesView'); // For switchView (currently placeholder)
-    const uploadTemplateFormSection = document.getElementById('uploadTemplateFormSection'); // For switchView (placeholder)
+    const dashboardView = document.getElementById('dashboardView');
+    const taRecordsView = document.getElementById('taRecordsView');
+    const expertsView = document.getElementById('expertsView'); // Ensured
+    const templatesView = document.getElementById('templatesView');
+    const uploadTemplateFormSection = document.getElementById('uploadTemplateFormSection');
 
+    // Experts Page DOM Elements
+    const expertsTableBody = document.getElementById('expertsTableBody'); // Ensured
+    const noExpertsMessage = document.getElementById('noExpertsMessage'); // Ensured
+    const expertsPaginationControls = document.getElementById('expertsPaginationControls'); // Ensured
 
     const filterCountry = document.getElementById('filterCountry');
     const filterExpert = document.getElementById('filterExpert');
@@ -98,6 +103,17 @@
     const filterTypeOfTA = document.getElementById('filterTypeOfTA');
     const applyFiltersBtn = document.getElementById('applyFiltersBtn');
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+    const templateListContainer = document.getElementById('templateListContainer');
+    // const noTemplatesMessage = document.getElementById('noTemplatesMessage'); // Already defined
+    const openUploadTemplateFormBtn = document.getElementById('openUploadTemplateFormBtn');
+    const uploadTemplateForm = document.getElementById('uploadTemplateForm');
+    const uploadTemplateFormTitle = document.getElementById('uploadTemplateFormTitle');
+    const cancelUploadTemplateBtn = document.getElementById('cancelUploadTemplateBtn');
+    const cancelUploadTemplateBtnBottom = document.getElementById('cancelUploadTemplateBtnBottom');
+    const templateNameField = document.getElementById('templateName');
+    const templateCategoryField = document.getElementById('templateCategory');
+    const templateFileField = document.getElementById('templateFile');
 
     const confirmationModal = document.getElementById('confirmationModal');
     const confirmationTitle = document.getElementById('confirmationTitle');
@@ -108,393 +124,137 @@
     // --- END: DOM Element References ---
 
     // --- START: Generic Helper Functions ---
+    // (Definitions as before)
     const getSelectedOptions = function(selectElement) { if(!selectElement) return []; return Array.from(selectElement.selectedOptions).map(function(option) { return option.value; }); };
-    const setSelectedOptions = function(selectElement, values) {
-        if (!selectElement || !values || !Array.isArray(values)) values = [];
-        Array.from(selectElement.options).forEach(function(option) { option.selected = values.includes(option.value); });
-    };
+    const setSelectedOptions = function(selectElement, values) { if (!selectElement || !values || !Array.isArray(values)) values = []; Array.from(selectElement.options).forEach(function(option) { option.selected = values.includes(option.value); }); };
     const formatDate = function(dateString) { if (!dateString) return 'N/A'; return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }); };
     const getCurrentDate = function() { return new Date("2025-05-11T00:00:00"); };
-    const getRecordStatus = function(record) {
-        if (!record.end_date) return "Ongoing";
-        const today = getCurrentDate(); const endDate = new Date(record.end_date);
-        return endDate < today ? "Closed" : "Ongoing";
-    };
-    const generateFileId = function() { return \`file_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`; }; // Longer random part
+    const getRecordStatus = function(record) { if (!record.end_date) return "Ongoing"; const today = getCurrentDate(); const endDate = new Date(record.end_date); return endDate < today ? "Closed" : "Ongoing"; };
+    const generateFileId = function() { return \`file_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`; };
     // --- END: Generic Helper Functions ---
 
     // --- START: API Request Function ---
+    // (Definition as before)
     async function apiRequest(url, method = 'GET', data = null, isFormData = false) {
-        const headers = {};
-        if (authToken) { headers['Authorization'] = 'Token ' + authToken; }
+        const headers = {}; if (authToken) { headers['Authorization'] = 'Token ' + authToken; }
         if (!isFormData && data) { headers['Content-Type'] = 'application/json'; }
-
-        const config = { method: method, headers: headers };
-        if (data) { config.body = isFormData ? data : JSON.stringify(data); }
-
+        const config = { method: method, headers: headers }; if (data) { config.body = isFormData ? data : JSON.stringify(data); }
         try {
-            const response = await fetch(url, config);
-            if (response.status === 204) return null; // No Content success
+            const response = await fetch(url, config); if (response.status === 204) return null;
             const responseData = await response.json();
             if (!response.ok) {
                 let errorMsg = responseData.detail || (typeof responseData === 'string' ? responseData : 'API error');
-                if (typeof responseData === 'object' && !responseData.detail) {
-                    errorMsg = Object.entries(responseData).map(function(entry) { return \`\${entry[0]}: \${entry[1]}\`; }).join('; ');
-                }
-                console.error('API Error:', response.status, responseData, 'URL:', url);
-                alert('Error (' + response.status + '): ' + errorMsg);
-                if (response.status === 401) logoutUser(false); // No login prompt on auth error during API call
-                throw new Error(errorMsg);
-            }
-            return responseData;
-        } catch (error) {
-            console.error('Fetch/Network Error:', error, 'URL:', url);
-            if (! (error instanceof Error && error.message.includes('API error'))) {
-                // alert('A network or unexpected error occurred. Please try again.');
-            }
-            throw error; // Re-throw to be caught by caller
-        }
+                if (typeof responseData === 'object' && !responseData.detail) { errorMsg = Object.entries(responseData).map(function(entry) { return \`\${entry[0]}: \${entry[1]}\`; }).join('; ');}
+                console.error('API Error:', response.status, responseData, 'URL:', url); alert('Error (' + response.status + '): ' + errorMsg);
+                if (response.status === 401) logoutUser(false); throw new Error(errorMsg);
+            } return responseData;
+        } catch (error) { console.error('Fetch/Network Error:', error, 'URL:', url); throw error; }
     }
     // --- END: API Request Function ---
 
     // --- START: Auth Functions ---
-    function createLoginButton() {
-        if (document.getElementById('loginButton')) return;
-        loginButton = document.createElement('button'); loginButton.id = 'loginButton'; loginButton.textContent = 'Login';
-        loginButton.classList.add('btn-primary', 'py-2', 'px-4', 'rounded-lg', 'fixed', 'top-4', 'right-4', 'z-50');
-        loginButton.addEventListener('click', showLoginForm);
-        document.body.appendChild(loginButton);
-    }
-    function createLogoutButton() {
-        if (document.getElementById('logoutButton')) return;
-        logoutButton = document.createElement('button'); logoutButton.id = 'logoutButton'; logoutButton.textContent = 'Logout';
-        logoutButton.classList.add('btn-secondary', 'py-2', 'px-4', 'rounded-lg', 'text-sm', 'mt-auto'); // mt-auto for sidebar
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) { sidebar.appendChild(logoutButton); } else { document.body.insertBefore(logoutButton, document.body.firstChild); }
-        logoutButton.addEventListener('click', function() { logoutUser(); });
-    }
-
-    function showLoginForm() {
-        const mainContentArea = document.querySelector('main');
-        if (mainContentArea) mainContentArea.innerHTML = '<div class="p-8"><h1>Please Log In</h1></div>';
-        const username = prompt("Username (e.g., admin):"); if (username === null) { reloadApp(); return; }
-        const password = prompt("Password (e.g., adminpass):"); if (password === null) { reloadApp(); return; }
-        loginUser(username, password);
-    }
+    // (Definitions as before)
+    function createLoginButton() { /* ... */ } function createLogoutButton() { /* ... */ }
+    function showLoginForm() { /* ... */ } function reloadApp(){ /* ... */ }
+    async function loginUser(username, password) { /* ... */ }
+    async function logoutUser(promptLogin = true) { /* ... */ }
+    async function fetchCurrentUser() { /* ... */ }
+    function updateUIForAuthState() { /* ... */ }
+    // (Full definitions for Auth functions as previously successful)
+    function createLoginButton() { if (document.getElementById('loginButton')) return; loginButton = document.createElement('button'); loginButton.id = 'loginButton'; loginButton.textContent = 'Login'; loginButton.classList.add('btn-primary', 'py-2', 'px-4', 'rounded-lg', 'fixed', 'top-4', 'right-4', 'z-50'); loginButton.addEventListener('click', showLoginForm); document.body.appendChild(loginButton);}
+    function createLogoutButton() { if (document.getElementById('logoutButton')) return; logoutButton = document.createElement('button'); logoutButton.id = 'logoutButton'; logoutButton.textContent = 'Logout'; logoutButton.classList.add('btn-secondary', 'py-2', 'px-4', 'rounded-lg', 'text-sm', 'mt-auto'); const sb = document.querySelector('.sidebar'); if (sb) { sb.appendChild(logoutButton); } else { document.body.insertBefore(logoutButton, document.body.firstChild); } logoutButton.addEventListener('click', function() { logoutUser(); });}
+    function showLoginForm() { const main = document.querySelector('main'); if(main)main.innerHTML='<div class="p-8"><h1>Please Log In</h1></div>'; const u=prompt("Username:"); if(u===null){reloadApp();return;} const p=prompt("Password:"); if(p===null){reloadApp();return;} loginUser(u,p); }
     function reloadApp(){ window.location.reload(); }
-
-    async function loginUser(username, password) {
-        try {
-            const data = await apiRequest(AUTH_LOGIN_URL, 'POST', { username, password });
-            authToken = data.token; currentUser = data.user;
-            localStorage.setItem('authToken', authToken); localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            alert('Login successful! User: ' + currentUser.username);
-            reloadApp();
-        } catch (error) { alert('Login failed.'); localStorage.removeItem('authToken'); localStorage.removeItem('currentUser');}
-    }
-    async function logoutUser(promptLogin = true) {
-        if (authToken) { try { await apiRequest(AUTH_LOGOUT_URL, 'POST'); } catch (e) { console.warn("Logout API fail", e);}}
-        authToken = null; currentUser = null;
-        localStorage.removeItem('authToken'); localStorage.removeItem('currentUser');
-        if (promptLogin) { alert('Logged out.'); reloadApp(); } else { updateUIForAuthState(); }
-    }
-    async function fetchCurrentUser() {
-        if (!authToken) { currentUser = null; localStorage.removeItem('currentUser'); updateUIForAuthState(); return null; }
-        try {
-            currentUser = await apiRequest(AUTH_USER_DETAIL_URL);
-            localStorage.setItem('currentUser', JSON.stringify(currentUser)); return currentUser;
-        } catch (e) { console.warn("Fetch user failed", e.message); logoutUser(false); return null; }
-    }
-    function updateUIForAuthState() {
-        const isAdmin = currentUser && currentUser.profile && currentUser.profile.user_type === 'admin';
-        if (openAddNewRecordFormBtnSidebar) openAddNewRecordFormBtnSidebar.style.display = isAdmin ? 'flex' : 'none';
-        if (openAddNewRecordBtnTARecords) openAddNewRecordBtnTARecords.style.display = isAdmin ? 'inline-flex' : 'none';
-        // const openUploadTemplateFormBtn = document.getElementById('openUploadTemplateFormBtn'); // Define if used
-        // if (openUploadTemplateFormBtn) openUploadTemplateFormBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-
-        if (currentUser) {
-            if (currentViewTitle) currentViewTitle.textContent = 'Welcome, ' + currentUser.username;
-            if (logoutButton) logoutButton.style.display = 'block'; else createLogoutButton(); // Create if not exists
-            if (loginButton) loginButton.style.display = 'none';
-            const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.remove('hidden');
-            const mainEl = document.querySelector('main'); if(mainEl) mainEl.style.display = '';
-
-        } else {
-            if (currentViewTitle) currentViewTitle.textContent = 'Please Log In';
-            if (logoutButton) logoutButton.style.display = 'none';
-            if (loginButton) loginButton.style.display = 'block'; else createLoginButton(); // Create if not exists
-            const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.add('hidden');
-            const mainEl = document.querySelector('main');
-            if(mainEl) mainEl.innerHTML = '<div class="p-8 text-center"><h1>Access Denied</h1><p>Please log in to use the application.</p></div>';
-        }
-    }
+    async function loginUser(username, password) { try { const d=await apiRequest(AUTH_LOGIN_URL,'POST',{username,password}); authToken=d.token;currentUser=d.user;localStorage.setItem('authToken',authToken);localStorage.setItem('currentUser',JSON.stringify(currentUser));alert('Login OK: '+currentUser.username);reloadApp(); } catch(e){alert('Login fail');localStorage.removeItem('authToken');localStorage.removeItem('currentUser');}}
+    async function logoutUser(promptLogin=true){ if(authToken){try{await apiRequest(AUTH_LOGOUT_URL,'POST');}catch(e){console.warn("Logout API fail",e);}} authToken=null;currentUser=null;localStorage.removeItem('authToken');localStorage.removeItem('currentUser'); if(promptLogin){alert('Logged out.');reloadApp();}else{updateUIForAuthState();}}
+    async function fetchCurrentUser(){if(!authToken){currentUser=null;localStorage.removeItem('currentUser');updateUIForAuthState();return null;}try{currentUser=await apiRequest(AUTH_USER_DETAIL_URL);localStorage.setItem('currentUser',JSON.stringify(currentUser));return currentUser;}catch(e){console.warn("Fetch user failed",e.message);logoutUser(false);return null;}}
+    function updateUIForAuthState(){ const isAdmin=currentUser&&currentUser.profile&&currentUser.profile.user_type==='admin'; if(openAddNewRecordFormBtnSidebar)openAddNewRecordFormBtnSidebar.style.display=isAdmin?'flex':'none'; if(openAddNewRecordBtnTARecords)openAddNewRecordBtnTARecords.style.display=isAdmin?'inline-flex':'none'; const btnUploadTpl=document.getElementById('openUploadTemplateFormBtn'); if(btnUploadTpl)btnUploadTpl.style.display=isAdmin?'inline-flex':'none'; if(currentUser){if(currentViewTitle)currentViewTitle.textContent='Welcome, '+currentUser.username; if(logoutButton)logoutButton.style.display='block';else createLogoutButton(); if(loginButton)loginButton.style.display='none'; const sb=document.querySelector('.sidebar');if(sb)sb.classList.remove('hidden'); const mainEl=document.querySelector('main');if(mainEl)mainEl.style.display='';}else{if(currentViewTitle)currentViewTitle.textContent='Please Log In'; if(logoutButton)logoutButton.style.display='none'; if(loginButton)loginButton.style.display='block';else createLoginButton(); const sb=document.querySelector('.sidebar');if(sb)sb.classList.add('hidden'); const mainEl=document.querySelector('main'); if(mainEl)mainEl.innerHTML='<div class="p-8 text-center"><h1>Access Denied</h1><p>Please log in.</p></div>';}}
     // --- END: Auth Functions ---
 
-    // --- START: TAF Record Form Functions (Create/Edit/File Handling) ---
-    function openTaRecordFormPage(isEditing = false, recordToEdit = null) {
-        if (!currentUser || !currentUser.profile || currentUser.profile.user_type !== 'admin') {
-            alert("Not authorized."); if (typeof switchView === 'function') switchView(previousActiveView || 'all'); return;
-        }
-        if (!taRecordForm || !formSectionTitle) { console.error("TAF Form elements missing!"); return; }
-
-        formSectionTitle.textContent = isEditing ? \`Edit TA Record - ID: \${recordToEdit.id}\` : 'Add New TA Record';
-        editingRecordId = isEditing ? recordToEdit.id : null;
-        taRecordForm.reset(); currentFilesForForm = [];
-
-        if (isEditing && recordToEdit) {
-            if(recordIdField) recordIdField.value = recordToEdit.id;
-            if(titleField) titleField.value = recordToEdit.title;
-            if(areaField) areaField.value = recordToEdit.area || '';
-            if(scopeField) scopeField.value = recordToEdit.scope;
-            if(startDateField) startDateField.value = recordToEdit.start_date;
-            if(endDateField) endDateField.value = recordToEdit.end_date || '';
-            if(locationField) locationField.value = recordToEdit.location || '';
-            if(countryField) countryField.value = recordToEdit.country;
-            if(typeOfTAField) typeOfTAField.value = recordToEdit.type_of_ta;
-            if(typeOfTAOtherDetailsField) typeOfTAOtherDetailsField.value = recordToEdit.type_of_ta_other_details || '';
-            if(themeField) setSelectedOptions(themeField, recordToEdit.themes_list || (recordToEdit.themes_text ? recordToEdit.themes_text.split(',').map(function(s){return s.trim();}) : [] ) );
-            if(themeOtherDetailsField) themeOtherDetailsField.value = recordToEdit.theme_other_details || '';
-            if(expertsInvolvedField) expertsInvolvedField.checked = recordToEdit.experts_involved_flag;
-            if(expertsDetailsField) expertsDetailsField.value = recordToEdit.experts_details_text || '';
-            if(remarksField) remarksField.value = recordToEdit.remarks || '';
-            if (recordToEdit.attachments && Array.isArray(recordToEdit.attachments)) {
-                currentFilesForForm = recordToEdit.attachments.map(function(att) { return {
-                    id: att.id, name: att.file_name || (att.file ? att.file.split('/').pop() : 'file'),
-                    category: att.category, existing: true, deleted: false, url: att.file_url
-                };});
-            }
-        }
-        if(typeOfTAField && typeOfTAOtherContainer) typeOfTAOtherContainer.classList.toggle('hidden', typeOfTAField.value !== 'Others');
-        if(themeField && themeOtherContainer) themeOtherContainer.classList.toggle('hidden', !getSelectedOptions(themeField).includes('Others'));
-        if(expertsInvolvedField && expertsDetailsContainer) expertsDetailsContainer.classList.toggle('hidden', !expertsInvolvedField.checked);
-
-        renderFileTabsInForm();
-        if (typeof switchView === 'function') switchView('taRecordForm');
-        else if(taRecordFormSection) taRecordFormSection.classList.remove('hidden');
-    }
-    function closeTaRecordFormPage() {
-        if(taRecordForm) taRecordForm.reset();
-        editingRecordId = null; currentFilesForForm = [];
-        if(typeOfTAOtherContainer) typeOfTAOtherContainer.classList.add('hidden');
-        if(themeOtherContainer) themeOtherContainer.classList.add('hidden');
-        if(expertsDetailsContainer) expertsDetailsContainer.classList.add('hidden');
-        if(formFileTabsContainer) formFileTabsContainer.innerHTML = '';
-        if(formFileTabContentContainer) formFileTabContentContainer.innerHTML = '';
-        if (typeof switchView === 'function') switchView(previousActiveView || 'all');
-    }
-    if(cancelFormSectionBtn) cancelFormSectionBtn.addEventListener('click', closeTaRecordFormPage);
-    if(cancelFormSectionBtnBottom) cancelFormSectionBtnBottom.addEventListener('click', closeTaRecordFormPage);
-    if(openAddNewRecordFormBtnSidebar) openAddNewRecordFormBtnSidebar.addEventListener('click', function() { openTaRecordFormPage(false, null); });
-    if(openAddNewRecordBtnTARecords) openAddNewRecordBtnTARecords.addEventListener('click', function() { openTaRecordFormPage(false, null); });
-
-    if(typeOfTAField) typeOfTAField.addEventListener('change', function() { if(typeOfTAOtherContainer) typeOfTAOtherContainer.classList.toggle('hidden', typeOfTAField.value !== 'Others');});
-    if(themeField) themeField.addEventListener('change', function() { if(themeOtherContainer) themeOtherContainer.classList.toggle('hidden', !getSelectedOptions(themeField).includes('Others'));});
-    if(expertsInvolvedField) expertsInvolvedField.addEventListener('change', function() { if(expertsDetailsContainer) expertsDetailsContainer.classList.toggle('hidden', !expertsInvolvedField.checked);});
-
-    if (taRecordForm) {
-        taRecordForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (!currentUser || !currentUser.profile || currentUser.profile.user_type !== 'admin') { alert("Not authorized."); return; }
-            const recordData = {
-                title: titleField.value.trim(), area: areaField.value.trim(), scope: scopeField.value,
-                start_date: startDateField.value, end_date: endDateField.value || null, location: locationField.value.trim(),
-                country: countryField.value, type_of_ta: typeOfTAField.value,
-                type_of_ta_other_details: typeOfTAField.value === 'Others' ? typeOfTAOtherDetailsField.value.trim() : '',
-                themes_list_input: getSelectedOptions(themeField),
-                theme_other_details: getSelectedOptions(themeField).includes('Others') ? themeOtherDetailsField.value.trim() : '',
-                experts_involved_flag: expertsInvolvedField.checked,
-                experts_details_text: expertsInvolvedField.checked ? expertsDetailsField.value.trim() : '',
-                remarks: remarksField.value.trim(),
-            };
-            try {
-                const recordUrl = editingRecordId ? \`\${TAF_RECORDS_URL}\${editingRecordId}/\` : TAF_RECORDS_URL;
-                const method = editingRecordId ? 'PUT' : 'POST';
-                const savedRecord = await apiRequest(recordUrl, method, recordData);
-                if (savedRecord && savedRecord.id) { await handleFormFileUploads(savedRecord.id); }
-                else { throw new Error("Failed to get valid record ID."); }
-                closeTaRecordFormPage();
-                if (typeof renderTable === 'function') renderTable(1, 'all'); // Refresh to first page of all records
-            } catch (error) { console.error("Save TAF record failed:", error); /* Alert is in apiRequest */ }
-        });
-    }
-    async function handleFormFileUploads(recordId) {
-        const newFiles = currentFilesForForm.filter(function(f) { return f.fileObject && !f.deleted; });
-        const deletedExisting = currentFilesForForm.filter(function(f) { return f.existing && f.deleted && f.id; });
-        for (const fileItem of newFiles) {
-            const fd = new FormData(); fd.append('file', fileItem.fileObject); fd.append('taf_record', recordId);
-            fd.append('category', fileItem.category);
-            try { await apiRequest(ATTACHMENTS_URL, 'POST', fd, true); }
-            catch (e) { console.error(\`Upload fail \${fileItem.name}\`, e); alert(\`Upload error for \${fileItem.name}\`); }
-        }
-        for (const fileItem of deletedExisting) {
-            try { await apiRequest(\`\${ATTACHMENTS_URL}\${fileItem.id}/\`, 'DELETE'); }
-            catch (e) { console.error(\`Delete fail \${fileItem.name}\`, e); alert(\`Delete error for \${fileItem.name}\`); }
-        }
-    }
-    function renderFileTabsInForm() {
-        if(!formFileTabsContainer || !formFileTabContentContainer) return;
-        formFileTabsContainer.innerHTML = '';
-        fileCategories.forEach(function(category, index) {
-            const btn = document.createElement('button'); btn.textContent = category; btn.dataset.category = category;
-            if (index === 0) btn.classList.add('active-tab');
-            btn.addEventListener('click', function() { switchFileTabInForm(category); });
-            formFileTabsContainer.appendChild(btn);
-        });
-        if (fileCategories.length > 0) switchFileTabInForm(fileCategories[0]);
-    }
-    function switchFileTabInForm(category) {
-        if(!formFileTabsContainer || !formFileTabContentContainer) return;
-        formFileTabsContainer.querySelectorAll('button').forEach(function(btn){ btn.classList.toggle('active-tab',btn.dataset.category === category);});
-        formFileTabContentContainer.innerHTML = '';
-        const filesForCat = currentFilesForForm.filter(function(f){ return f.category === category && !f.deleted; });
-        const ul = document.createElement('ul'); ul.classList.add('list-none','space-y-2','mb-4');
-        if(filesForCat.length === 0){ ul.innerHTML = '<li class="text-gray-500">No files.</li>';}
-        else { filesForCat.forEach(function(f){ const li=document.createElement('li');li.classList.add('file-item'); li.innerHTML = \`<span class="truncate" title="\${f.name}">\${f.name} \${f.existing? '(current)':'(new)'}</span><button type="button" class="text-red-500 delete-form-file-btn" data-file-id="\${f.id}"><i class="fas fa-trash-alt"></i></button>\`; ul.appendChild(li);});}
-        formFileTabContentContainer.appendChild(ul);
-        const addDiv = document.createElement('div'); addDiv.classList.add('mt-4');
-        const inputId = \`form-file-input-\${category.replace(/[^a-zA-Z0-9]/g, '-')}\`;
-        addDiv.innerHTML = \`<label for="\${inputId}" class="btn-primary ...">Add File</label><input type="file" id="\${inputId}" class="hidden" data-category="\${category}" multiple>\`;
-        formFileTabContentContainer.appendChild(addDiv);
-        document.getElementById(inputId).addEventListener('change', handleFileUploadInFormEvent);
-        formFileTabContentContainer.querySelectorAll('.delete-form-file-btn').forEach(function(b){ const newB = b.cloneNode(true); b.parentNode.replaceChild(newB,b); newB.addEventListener('click', handleDeleteFileInFormEvent);});
-    }
-    function handleFileUploadInFormEvent(event) {
-        const files = event.target.files; if (!files.length) return; const cat = event.target.dataset.category;
-        for (const file of files) { currentFilesForForm.push({ id:generateFileId(), name:file.name, category:cat, fileObject:file, existing:false, deleted:false });}
-        switchFileTabInForm(cat); event.target.value = '';
-    }
-    function handleDeleteFileInFormEvent(event) {
-        const fileId = event.currentTarget.dataset.fileId; const idx = currentFilesForForm.findIndex(function(f){return f.id === fileId;});
-        if (idx > -1) { const f = currentFilesForForm[idx]; if(f.existing){currentFilesForForm[idx].deleted=true;}else{currentFilesForForm.splice(idx,1);} switchFileTabInForm(f.category);}
-    }
+    // --- START: TAF Record Form Functions ---
+    // (Definitions as before)
+    function openTaRecordFormPage(isEditing = false, recordToEdit = null) { /* ... */ }
+    function closeTaRecordFormPage() { /* ... */ }
+    async function handleFormFileUploads(recordId) { /* ... */ }
+    function renderFileTabsInForm() { /* ... */ }
+    function switchFileTabInForm(category) { /* ... */ }
+    function handleFileUploadInFormEvent(event) { /* ... */ }
+    function handleDeleteFileInFormEvent(event) { /* ... */ }
+    // (Full definitions for TAF form functions as previously successful)
+    function openTaRecordFormPage(isEditing=false,recordToEdit=null){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");if(typeof switchView==='function')switchView(previousActiveView||'all');return;}if(!taRecordForm||!formSectionTitle){console.error("TAF Form elements missing!");return;}formSectionTitle.textContent=isEditing?\`Edit TA Record - ID: \${recordToEdit.id}\`:'Add New TA Record';editingRecordId=isEditing?recordToEdit.id:null;taRecordForm.reset();currentFilesForForm=[];if(isEditing&&recordToEdit){if(recordIdField)recordIdField.value=recordToEdit.id;if(titleField)titleField.value=recordToEdit.title;if(areaField)areaField.value=recordToEdit.area||'';if(scopeField)scopeField.value=recordToEdit.scope;if(startDateField)startDateField.value=recordToEdit.start_date;if(endDateField)endDateField.value=recordToEdit.end_date||'';if(locationField)locationField.value=recordToEdit.location||'';if(countryField)countryField.value=recordToEdit.country;if(typeOfTAField)typeOfTAField.value=recordToEdit.type_of_ta;if(typeOfTAOtherDetailsField)typeOfTAOtherDetailsField.value=recordToEdit.type_of_ta_other_details||'';if(themeField)setSelectedOptions(themeField,recordToEdit.themes_list||(recordToEdit.themes_text?recordToEdit.themes_text.split(',').map(function(s){return s.trim();}):[]));if(themeOtherDetailsField)themeOtherDetailsField.value=recordToEdit.theme_other_details||'';if(expertsInvolvedField)expertsInvolvedField.checked=recordToEdit.experts_involved_flag;if(expertsDetailsField)expertsDetailsField.value=recordToEdit.experts_details_text||'';if(remarksField)remarksField.value=recordToEdit.remarks||'';if(recordToEdit.attachments&&Array.isArray(recordToEdit.attachments)){currentFilesForForm=recordToEdit.attachments.map(function(att){return{id:att.id,name:att.file_name||(att.file?att.file.split('/').pop():'file'),category:att.category,existing:true,deleted:false,url:att.file_url};});}} if(typeOfTAField&&typeOfTAOtherContainer)typeOfTAOtherContainer.classList.toggle('hidden',typeOfTAField.value!=='Others');if(themeField&&themeOtherContainer)themeOtherContainer.classList.toggle('hidden',!getSelectedOptions(themeField).includes('Others'));if(expertsInvolvedField&&expertsDetailsContainer)expertsDetailsContainer.classList.toggle('hidden',!expertsInvolvedField.checked);renderFileTabsInForm();if(typeof switchView==='function')switchView('taRecordForm');else if(taRecordFormSection)taRecordFormSection.classList.remove('hidden');}
+    function closeTaRecordFormPage(){if(taRecordForm)taRecordForm.reset();editingRecordId=null;currentFilesForForm=[];if(typeOfTAOtherContainer)typeOfTAOtherContainer.classList.add('hidden');if(themeOtherContainer)themeOtherContainer.classList.add('hidden');if(expertsDetailsContainer)expertsDetailsContainer.classList.add('hidden');if(formFileTabsContainer)formFileTabsContainer.innerHTML='';if(formFileTabContentContainer)formFileTabContentContainer.innerHTML='';if(typeof switchView==='function')switchView(previousActiveView||'all');}
+    if(cancelFormSectionBtn)cancelFormSectionBtn.addEventListener('click',closeTaRecordFormPage);if(cancelFormSectionBtnBottom)cancelFormSectionBtnBottom.addEventListener('click',closeTaRecordFormPage);if(openAddNewRecordFormBtnSidebar)openAddNewRecordFormBtnSidebar.addEventListener('click',function(){openTaRecordFormPage(false,null);});if(openAddNewRecordBtnTARecords)openAddNewRecordBtnTARecords.addEventListener('click',function(){openTaRecordFormPage(false,null);});
+    if(typeOfTAField)typeOfTAField.addEventListener('change',function(){if(typeOfTAOtherContainer)typeOfTAOtherContainer.classList.toggle('hidden',typeOfTAField.value!=='Others');});if(themeField)themeField.addEventListener('change',function(){if(themeOtherContainer)themeOtherContainer.classList.toggle('hidden',!getSelectedOptions(themeField).includes('Others'));});if(expertsInvolvedField)expertsInvolvedField.addEventListener('change',function(){if(expertsDetailsContainer)expertsDetailsContainer.classList.toggle('hidden',!expertsInvolvedField.checked);});
+    if(taRecordForm){taRecordForm.addEventListener('submit',async function(e){e.preventDefault();if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}
+    const recordData={title:titleField.value.trim(),area:areaField.value.trim(),scope:scopeField.value,start_date:startDateField.value,end_date:endDateField.value||null,location:locationField.value.trim(),country:countryField.value,type_of_ta:typeOfTAField.value,type_of_ta_other_details:typeOfTAField.value==='Others'?typeOfTAOtherDetailsField.value.trim():'',themes_list_input:getSelectedOptions(themeField),theme_other_details:getSelectedOptions(themeField).includes('Others')?themeOtherDetailsField.value.trim():'',experts_involved_flag:expertsInvolvedField.checked,experts_details_text:expertsInvolvedField.checked?expertsDetailsField.value.trim():'',remarks:remarksField.value.trim()};
+    try{const recordUrl=editingRecordId?\`\${TAF_RECORDS_URL}\${editingRecordId}/\`:TAF_RECORDS_URL;const method=editingRecordId?'PUT':'POST';const savedRecord=await apiRequest(recordUrl,method,recordData);if(savedRecord&&savedRecord.id){await handleFormFileUploads(savedRecord.id);}else{throw new Error("Failed to get valid record ID.");}closeTaRecordFormPage();if(typeof renderTable==='function')renderTable(1,'all');}catch(error){console.error("Save TAF record failed:",error);}});};
+    async function handleFormFileUploads(recordId){const newFiles=currentFilesForForm.filter(function(f){return f.fileObject&&!f.deleted;});const deletedExisting=currentFilesForForm.filter(function(f){return f.existing&&f.deleted&&f.id;});for(const fileItem of newFiles){const fd=new FormData();fd.append('file',fileItem.fileObject);fd.append('taf_record',recordId);fd.append('category',fileItem.category);try{await apiRequest(ATTACHMENTS_URL,'POST',fd,true);}catch(e){console.error(\`Upload fail \${fileItem.name}\`,e);alert(\`Upload error for \${fileItem.name}\`);}} for(const fileItem of deletedExisting){try{await apiRequest(\`\${ATTACHMENTS_URL}\${fileItem.id}/\`,'DELETE');}catch(e){console.error(\`Delete fail \${fileItem.name}\`,e);alert(\`Delete error for \${fileItem.name}\`);}}}
+    function renderFileTabsInForm(){if(!formFileTabsContainer||!formFileTabContentContainer)return;formFileTabsContainer.innerHTML='';fileCategories.forEach(function(category,index){const btn=document.createElement('button');btn.textContent=category;btn.dataset.category=category;if(index===0)btn.classList.add('active-tab');btn.addEventListener('click',function(){switchFileTabInForm(category);});formFileTabsContainer.appendChild(btn);});if(fileCategories.length>0)switchFileTabInForm(fileCategories[0]);}
+    function switchFileTabInForm(category){if(!formFileTabsContainer||!formFileTabContentContainer)return;formFileTabsContainer.querySelectorAll('button').forEach(function(btn){btn.classList.toggle('active-tab',btn.dataset.category===category);});formFileTabContentContainer.innerHTML='';const filesForCat=currentFilesForForm.filter(function(f){return f.category===category&&!f.deleted;});const ul=document.createElement('ul');ul.classList.add('list-none','space-y-2','mb-4');if(filesForCat.length===0){ul.innerHTML='<li class="text-gray-500">No files.</li>';} else{filesForCat.forEach(function(f){const li=document.createElement('li');li.classList.add('file-item');li.innerHTML=\`<span class="truncate" title="\${f.name}">\${f.name} \${f.existing?'(current)':'(new)'}</span><button type="button" class="text-red-500 delete-form-file-btn" data-file-id="\${f.id}"><i class="fas fa-trash-alt"></i></button>\`;ul.appendChild(li);});} formFileTabContentContainer.appendChild(ul);const addDiv=document.createElement('div');addDiv.classList.add('mt-4');const inputId=\`form-file-input-\${category.replace(/[^a-zA-Z0-9]/g,'-')}\`;addDiv.innerHTML=\`<label for="\${inputId}" class="btn-primary py-2 px-3 rounded-md text-sm cursor-pointer inline-flex items-center"><i class="fas fa-plus mr-2"></i>Add File</label><input type="file" id="\${inputId}" class="hidden" data-category="\${category}" multiple>\`;formFileTabContentContainer.appendChild(addDiv);document.getElementById(inputId).addEventListener('change',handleFileUploadInFormEvent);formFileTabContentContainer.querySelectorAll('.delete-form-file-btn').forEach(function(b){const newB=b.cloneNode(true);b.parentNode.replaceChild(newB,b);newB.addEventListener('click',handleDeleteFileInFormEvent);});}
+    function handleFileUploadInFormEvent(event){const files=event.target.files;if(!files.length)return;const cat=event.target.dataset.category;for(const file of files){currentFilesForForm.push({id:generateFileId(),name:file.name,category:cat,fileObject:file,existing:false,deleted:false});}switchFileTabInForm(cat);event.target.value='';}
+    function handleDeleteFileInFormEvent(event){const fileId=event.currentTarget.dataset.fileId;const idx=currentFilesForForm.findIndex(function(f){return f.id===fileId;});if(idx>-1){const f=currentFilesForForm[idx];if(f.existing){currentFilesForForm[idx].deleted=true;}else{currentFilesForForm.splice(idx,1);}switchFileTabInForm(f.category);}}
     // --- END: TAF Record Form Functions ---
 
     // --- START: TAF Record Listing & Viewing Functions ---
-    async function renderTable(page = 1, viewType = activeView || 'all') {
-        if (!currentUser) { if(taRecordsTableBody) taRecordsTableBody.innerHTML = '<tr><td colspan="8">Please log in.</td></tr>'; return;}
-        if(taRecordsTableBody) taRecordsTableBody.innerHTML = '<tr><td colspan="8">Loading...</td></tr>';
-        if(noRecordsMessage) noRecordsMessage.classList.add('hidden');
-        taRecordsCurrentPage = page;
-        let url = new URL(TAF_RECORDS_URL, window.location.origin);
-        url.searchParams.append('page', page); url.searchParams.append('page_size', ITEMS_PER_PAGE);
-        const todayStr = getCurrentDate().toISOString().split('T')[0];
-        if (viewType === 'ongoing') { url.searchParams.append('end_date__isnull', 'true');} // Simplified: only null end_date
-        else if (viewType === 'closed') { url.searchParams.append('end_date__lt', todayStr); url.searchParams.append('end_date__isnull', 'false');}
-        if(filterCountry && getSelectedOptions(filterCountry).length > 0) url.searchParams.append('country__in', getSelectedOptions(filterCountry).join(','));
-        if(filterExpert && filterExpert.value.trim()) url.searchParams.append('experts_details_text__icontains', filterExpert.value.trim());
-        if(filterTheme && getSelectedOptions(filterTheme).length > 0) getSelectedOptions(filterTheme).forEach(function(t){url.searchParams.append('themes_text__icontains', t);});
-        if(filterArea && filterArea.value.trim()) url.searchParams.append('area__icontains', filterArea.value.trim());
-        if(filterTypeOfTA && getSelectedOptions(filterTypeOfTA).length > 0) url.searchParams.append('type_of_ta__in', getSelectedOptions(filterTypeOfTA).join(','));
-        url.searchParams.append('ordering', '-created_at');
-        try {
-            const data = await apiRequest(url.toString()); const records = data.results;
-            if(taRecordsTableBody) taRecordsTableBody.innerHTML = '';
-            if (!records || records.length === 0) { if(noRecordsMessage) noRecordsMessage.classList.remove('hidden'); renderPaginationControlsUI(0, page, paginationControls, function(np){renderTable(np,viewType);}); return;}
-            records.forEach(function(rec) { const r=document.createElement('tr');r.classList.add('border-b','hover:bg-gray-50'); r.innerHTML = \`<td><span class="clickable-id" data-id="\${rec.id}">\${rec.id}</span></td><td>\${rec.title}</td><td>\${rec.country}</td><td>\${rec.area||'N/A'}</td><td>\${rec.scope}</td><td>\${formatDate(rec.start_date)}</td><td>\${formatDate(rec.end_date)}</td><td><button class="view-btn" data-id="\${rec.id}"><i class="fas fa-eye"></i></button>\${currentUser.profile.user_type==='admin' ? \`<button class="edit-btn" data-id="\${rec.id}"><i class="fas fa-edit"></i></button><button class="delete-btn" data-id="\${rec.id}"><i class="fas fa-trash-alt"></i></button>\` : ''}</td>\`; taRecordsTableBody.appendChild(r);});
-            renderPaginationControlsUI(data.count, page, paginationControls, function(np){renderTable(np,viewType);});
-            addTableActionListeners(records);
-        } catch (e) { if(taRecordsTableBody) taRecordsTableBody.innerHTML = '<tr><td colspan="8">Failed to load records.</td></tr>'; console.error("Render table failed",e);}
-    }
-    function addTableActionListeners(records) {
-        document.querySelectorAll('.edit-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return; const id=parseInt(e.currentTarget.dataset.id);const rec=records.find(function(r){return r.id===id;}); if(rec)openTaRecordFormPage(true,rec);});});
-        document.querySelectorAll('.delete-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return; const id=parseInt(e.currentTarget.dataset.id);openConfirmationModal('Delete Record', \`ID \${id}?\`,function(){deleteRecord(id);});});});
-        document.querySelectorAll('.view-btn, .clickable-id').forEach(function(b){b.addEventListener('click',function(e){const id=parseInt(e.currentTarget.dataset.id);openViewRecordPageById(id);});});
-    }
-    async function deleteRecord(id) {
-        if(currentUser.profile.user_type!=='admin'){alert("Not auth");return;}
-        try{await apiRequest(\`\${TAF_RECORDS_URL}\${id}/\`,'DELETE');closeConfirmationModal();renderTable(taRecordsCurrentPage,activeView);}catch(e){alert("Delete error");}
-    }
-    async function openViewRecordPageById(recordId) {
-        try { const rec = await apiRequest(\`\${TAF_RECORDS_URL}\${recordId}/\`); if(!rec){alert("Not found");return;} currentViewRecordId=rec.id; if(viewRecordPageTitle)viewRecordPageTitle.textContent=\`Details ID: \${rec.id}\`; if(viewRecordDetailsContainer)viewRecordDetailsContainer.innerHTML=\`<div>Title: \${rec.title}</div>\`; /* Expand details */ renderFileTabsInViewPage(rec.attachments||[]); if(typeof switchView==='function')switchView('recordDetail'); else if(viewRecordPageSection)viewRecordPageSection.classList.remove('hidden');} catch(e){alert("Load record error");}
-    }
-    if(closeViewRecordPageBtn) closeViewRecordPageBtn.addEventListener('click', function(){if(typeof switchView==='function')switchView(previousActiveView||'all');else if(viewRecordPageSection)viewRecordPageSection.classList.add('hidden');});
-    function renderFileTabsInViewPage(attachments){
-        if(!viewRecordFileManagementSection || !viewRecordFileTabsContainer || !viewRecordFileTabContentContainer) return;
-        viewRecordFileManagementSection.classList.remove('hidden'); viewRecordFileTabsContainer.innerHTML='';
-        fileCategories.forEach(function(cat,idx){const btn=document.createElement('button');btn.textContent=cat;btn.dataset.category=cat;if(idx===0)btn.classList.add('active-tab');btn.addEventListener('click',function(){switchFileTabInViewPage(cat,attachments);});viewRecordFileTabsContainer.appendChild(btn);});
-        if(fileCategories.length>0)switchFileTabInViewPage(fileCategories[0],attachments); else if(viewRecordFileTabContentContainer)viewRecordFileTabContentContainer.innerHTML='<p>No categories.</p>';
-    }
-    function switchFileTabInViewPage(category, attachments){
-        if(!viewRecordFileTabsContainer || !viewRecordFileTabContentContainer) return;
-        viewRecordFileTabsContainer.querySelectorAll('button').forEach(function(b){b.classList.toggle('active-tab',b.dataset.category===category);});
-        viewRecordFileTabContentContainer.innerHTML=''; const filesForCat=attachments.filter(function(a){return a.category===category;});
-        if(filesForCat.length===0){viewRecordFileTabContentContainer.innerHTML='<p>No files.</p>';}
-        else{const ul=document.createElement('ul');ul.classList.add('list-none');filesForCat.forEach(function(a){const li=document.createElement('li');li.classList.add('file-item');li.innerHTML=\`<a href="\${a.file_url||'#'}" target="_blank" download="\${a.file_name||'file'}">\${a.file_name||'File'}</a>\${currentUser.profile.user_type==='admin' ? \`<button class="delete-attachment-btn" data-attachment-id="\${a.id}"><i class="fas fa-trash-alt"></i></button>\`:''}\`;ul.appendChild(li);}); viewRecordFileTabContentContainer.appendChild(ul);
-        viewRecordFileTabContentContainer.querySelectorAll('.delete-attachment-btn').forEach(function(b){b.addEventListener('click',function(e){const id=e.currentTarget.dataset.attachmentId;openConfirmationModal('Delete File','Sure?',async function(){try{await apiRequest(\`\${ATTACHMENTS_URL}\${id}/\`,'DELETE');closeConfirmationModal();if(currentViewRecordId)openViewRecordPageById(currentViewRecordId);}catch(er){alert("Delete attach error");}});});});}
-    }
-    function renderPaginationControlsUI(totalItems,currentPage,container,renderFn){
-        if(!container)return; container.innerHTML='';const totalP=Math.ceil(totalItems/ITEMS_PER_PAGE);if(totalP<=1)return;
-        const btn=function(txt,pNum,dis){const b=document.createElement('button');b.innerHTML=txt;b.classList.add('px-2','py-1','border');if(dis){b.disabled=true;b.classList.add('opacity-50');}else{b.addEventListener('click',function(){renderFn(pNum);});}return b;};
-        container.appendChild(btn('Prev',currentPage-1,currentPage===1));
-        container.appendChild(document.createTextNode(\` \${currentPage}/\${totalP} \`));
-        container.appendChild(btn('Next',currentPage+1,currentPage===totalP));
-    }
+    // (Definitions as before)
+    async function renderTable(page = 1, viewType = activeView || 'all') { /* ... */ }
+    function addTableActionListeners(records) { /* ... */ }
+    async function deleteRecord(id) { /* ... */ }
+    async function openViewRecordPageById(recordId) { /* ... */ }
+    function renderFileTabsInViewPage(attachments){ /* ... */ }
+    function switchFileTabInViewPage(category, attachments){ /* ... */ }
+    function renderPaginationControlsUI(totalItems,currentPage,container,renderFn){ /* ... */ }
+    // (Full definitions for TAF list/view functions as previously successful)
+    async function renderTable(page=1,viewType=activeView||'all'){if(!currentUser){if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8">Please log in.</td></tr>';return;}if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8">Loading...</td></tr>';if(noRecordsMessage)noRecordsMessage.classList.add('hidden');taRecordsCurrentPage=page;let url=new URL(TAF_RECORDS_URL,window.location.origin);url.searchParams.append('page',page);url.searchParams.append('page_size',ITEMS_PER_PAGE);const todayStr=getCurrentDate().toISOString().split('T')[0];if(viewType==='ongoing'){url.searchParams.append('end_date__isnull','true');}else if(viewType==='closed'){url.searchParams.append('end_date__lt',todayStr);url.searchParams.append('end_date__isnull','false');} if(filterCountry&&getSelectedOptions(filterCountry).length>0)url.searchParams.append('country__in',getSelectedOptions(filterCountry).join(','));if(filterExpert&&filterExpert.value.trim())url.searchParams.append('experts_details_text__icontains',filterExpert.value.trim());if(filterTheme&&getSelectedOptions(filterTheme).length>0)getSelectedOptions(filterTheme).forEach(function(t){url.searchParams.append('themes_text__icontains',t);});if(filterArea&&filterArea.value.trim())url.searchParams.append('area__icontains',filterArea.value.trim());if(filterTypeOfTA&&getSelectedOptions(filterTypeOfTA).length>0)url.searchParams.append('type_of_ta__in',getSelectedOptions(filterTypeOfTA).join(','));url.searchParams.append('ordering','-created_at');try{const data=await apiRequest(url.toString());const records=data.results;if(taRecordsTableBody)taRecordsTableBody.innerHTML='';if(!records||records.length===0){if(noRecordsMessage)noRecordsMessage.classList.remove('hidden');renderPaginationControlsUI(0,page,paginationControls,function(np){renderTable(np,viewType);});return;} records.forEach(function(rec){const r=document.createElement('tr');r.classList.add('border-b','hover:bg-gray-50');r.innerHTML=\`<td class="px-6 py-4"><span class="clickable-id" data-id="\${rec.id}">\${rec.id}</span></td><td class="px-6 py-4 truncate" title="\${rec.title}">\${rec.title}</td><td class="px-6 py-4">\${rec.country}</td><td class="px-6 py-4 truncate" title="\${rec.area||''}">\${rec.area||'N/A'}</td><td class="px-6 py-4">\${rec.scope}</td><td class="px-6 py-4">\${formatDate(rec.start_date)}</td><td class="px-6 py-4">\${formatDate(rec.end_date)}</td><td class="px-6 py-4 flex space-x-1"><button class="view-btn text-gray-600 p-1" data-id="\${rec.id}"><i class="fas fa-eye"></i></button>\${currentUser.profile.user_type==='admin'?\`<button class="edit-btn text-blue-600 p-1" data-id="\${rec.id}"><i class="fas fa-edit"></i></button><button class="delete-btn text-red-600 p-1" data-id="\${rec.id}"><i class="fas fa-trash-alt"></i></button>\` : ''}</td>\`;taRecordsTableBody.appendChild(r);});renderPaginationControlsUI(data.count,page,paginationControls,function(np){renderTable(np,viewType);});addTableActionListeners(records);}catch(e){if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8">Failed to load.</td></tr>';console.error("Render table failed",e);}}
+    function addTableActionListeners(records){document.querySelectorAll('.edit-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return;const id=parseInt(e.currentTarget.dataset.id);const rec=records.find(function(r){return r.id===id;});if(rec)openTaRecordFormPage(true,rec);});});document.querySelectorAll('.delete-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return;const id=parseInt(e.currentTarget.dataset.id);openConfirmationModal('Delete Record', \`ID \${id}?\`,function(){deleteRecord(id);});});});document.querySelectorAll('.view-btn, .clickable-id').forEach(function(b){b.addEventListener('click',function(e){const id=parseInt(e.currentTarget.dataset.id);openViewRecordPageById(id);});});}
+    async function deleteRecord(id){if(currentUser.profile.user_type!=='admin'){alert("Not auth");return;}try{await apiRequest(\`\${TAF_RECORDS_URL}\${id}/\`,'DELETE');closeConfirmationModal();renderTable(taRecordsCurrentPage,activeView);}catch(e){alert("Delete error");}}
+    async function openViewRecordPageById(recordId){try{const rec=await apiRequest(\`\${TAF_RECORDS_URL}\${recordId}/\`);if(!rec){alert("Not found");return;}currentViewRecordId=rec.id;if(viewRecordPageTitle)viewRecordPageTitle.textContent=\`Details ID: \${rec.id}\`;if(viewRecordDetailsContainer)viewRecordDetailsContainer.innerHTML=\`<div><p><b>Title:</b> \${rec.title}</p><p><b>Country:</b> \${rec.country}</p> <p><b>Themes:</b> \${rec.themes_list ? rec.themes_list.join(', ') : (rec.themes_text || 'N/A')}</p>  </div>\`; /* Expand details as needed */ renderFileTabsInViewPage(rec.attachments||[]);if(typeof switchView==='function')switchView('recordDetail');else if(viewRecordPageSection)viewRecordPageSection.classList.remove('hidden');}catch(e){alert("Load record error: "+e.message); console.error(e);}}
+    if(closeViewRecordPageBtn)closeViewRecordPageBtn.addEventListener('click',function(){if(typeof switchView==='function')switchView(previousActiveView||'all');else if(viewRecordPageSection)viewRecordPageSection.classList.add('hidden');});
+    function renderFileTabsInViewPage(attachments){if(!viewRecordFileManagementSection||!viewRecordFileTabsContainer||!viewRecordFileTabContentContainer)return;viewRecordFileManagementSection.classList.remove('hidden');viewRecordFileTabsContainer.innerHTML='';fileCategories.forEach(function(cat,idx){const btn=document.createElement('button');btn.textContent=cat;btn.dataset.category=cat;btn.classList.add('px-3','py-1','border','text-sm');if(idx===0)btn.classList.add('active-tab','bg-white','text-blue-600');else btn.classList.add('bg-gray-100');btn.addEventListener('click',function(){switchFileTabInViewPage(cat,attachments);});viewRecordFileTabsContainer.appendChild(btn);});if(fileCategories.length>0)switchFileTabInViewPage(fileCategories[0],attachments);else if(viewRecordFileTabContentContainer)viewRecordFileTabContentContainer.innerHTML='<p>No categories.</p>';}
+    function switchFileTabInViewPage(category,attachments){if(!viewRecordFileTabsContainer||!viewRecordFileTabContentContainer)return;viewRecordFileTabsContainer.querySelectorAll('button').forEach(function(b){b.classList.toggle('active-tab',b.dataset.category===category);b.classList.toggle('bg-white',b.dataset.category===category);b.classList.toggle('text-blue-600',b.dataset.category===category);b.classList.toggle('bg-gray-100',b.dataset.category!==category);});viewRecordFileTabContentContainer.innerHTML='';const filesForCat=attachments.filter(function(a){return a.category===category;});if(filesForCat.length===0){viewRecordFileTabContentContainer.innerHTML='<p class="p-4 text-gray-500">No files for this category.</p>';}else{const ul=document.createElement('ul');ul.classList.add('list-none','p-4','space-y-2');filesForCat.forEach(function(a){const li=document.createElement('li');li.classList.add('file-item','flex','justify-between','items-center');li.innerHTML=\`<a href="\${a.file_url||'#'}" target="_blank" download="\${a.file_name||'file'}" class="text-blue-600 hover:underline">\${a.file_name||'File'}</a>\${currentUser.profile.user_type==='admin'?\`<button class="delete-attachment-btn text-red-500 p-1" data-attachment-id="\${a.id}"><i class="fas fa-trash-alt"></i></button>\`:''}\`;ul.appendChild(li);});viewRecordFileTabContentContainer.appendChild(ul);viewRecordFileTabContentContainer.querySelectorAll('.delete-attachment-btn').forEach(function(b){b.addEventListener('click',function(e){const id=e.currentTarget.dataset.attachmentId;openConfirmationModal('Delete File','Sure?',async function(){try{await apiRequest(\`\${ATTACHMENTS_URL}\${id}/\`,'DELETE');closeConfirmationModal();if(currentViewRecordId)openViewRecordPageById(currentViewRecordId);}catch(er){alert("Delete attach error");}});});});}}
+    function renderPaginationControlsUI(totalItems,currentPage,container,renderFn){if(!container)return;container.innerHTML='';const totalP=Math.ceil(totalItems/ITEMS_PER_PAGE);if(totalP<=1)return;const btn=function(txt,pNum,dis){const b=document.createElement('button');b.innerHTML=txt;b.classList.add('px-3','py-1','border','text-sm','rounded');if(dis){b.disabled=true;b.classList.add('opacity-50','cursor-not-allowed');}else{b.classList.add('hover:bg-gray-100');b.addEventListener('click',function(){renderFn(pNum);});}return b;};container.appendChild(btn('<i class="fas fa-chevron-left"></i> Prev',currentPage-1,currentPage===1));const pi=document.createElement('span');pi.classList.add('px-3','py-1','text-sm');pi.textContent=\`\${currentPage} / \${totalP}\`;container.appendChild(pi);container.appendChild(btn('Next <i class="fas fa-chevron-right"></i>',currentPage+1,currentPage===totalP));}
     // --- END: TAF Record Listing & Viewing Functions ---
 
+    // --- START: Templates Page Functions ---
+    // (Definitions from templates_script_part.js)
+    async function renderTemplatesPage() { /* ... */ }
+    function addTemplateActionListeners() { /* ... */ }
+    function openUploadTemplateFormPage() { /* ... */ }
+    function closeUploadTemplateFormPage() { /* ... */ }
+    // (Full definitions for Template functions as generated before)
+    async function renderTemplatesPage(){if(!templatesView||!templateListContainer||!noTemplatesMessage){console.error("Templates DOM not found.");return;}if(!currentUser){templateListContainer.innerHTML='<p>Login to view templates.</p>';noTemplatesMessage.classList.add('hidden');return;}templateListContainer.innerHTML='<p>Loading templates...</p>';noTemplatesMessage.classList.add('hidden');try{const templatesData=await apiRequest(TEMPLATES_URL+'?page_size=100');const templates=templatesData.results||templatesData;templateListContainer.innerHTML='';if(!templates||templates.length===0){noTemplatesMessage.classList.remove('hidden');return;} const templatesByCategory=templates.reduce(function(acc,tpl){(acc[tpl.category]=acc[tpl.category]||[]).push(tpl);return acc;},{});Object.keys(templatesByCategory).sort().forEach(function(category){const catDiv=document.createElement('div');catDiv.classList.add('mb-6');const titleEl=document.createElement('h4');titleEl.classList.add('text-lg','font-semibold','text-gray-700','mb-2','border-b','pb-1');titleEl.textContent=category;catDiv.appendChild(titleEl);const ul=document.createElement('ul');ul.classList.add('space-y-3');templatesByCategory[category].forEach(function(tpl){const li=document.createElement('li');li.classList.add('template-item','flex','justify-between','items-center','p-3','border','rounded-md');li.innerHTML=\`<div><h4 class="text-md font-semibold text-blue-700">\${tpl.name}</h4><p class="text-xs text-gray-500">File: \${tpl.file_name||(tpl.file?tpl.file.split('/').pop():'N/A')} | Uploaded: \${formatDate(tpl.uploaded_at)}</p>\${tpl.description?\`<p class="text-sm text-gray-600 mt-1">\${tpl.description}</p>\`:''}</div><div class="actions space-x-2"><a href="\${tpl.file_url||'#'}" target="_blank" download class="btn-secondary text-xs py-1 px-2 rounded">View/Download</a>\${currentUser&&currentUser.profile&&currentUser.profile.user_type==='admin'?\`<button class="delete-template-btn btn-danger text-xs py-1 px-2 rounded" data-id="\${tpl.id}"><i class="fas fa-trash-alt mr-1"></i>Delete</button>\`:''}</div>\`;ul.appendChild(li);});catDiv.appendChild(ul);templateListContainer.appendChild(catDiv);});addTemplateActionListeners();}catch(error){templateListContainer.innerHTML='<p class="text-red-500">Load templates failed: '+error.message+'</p>';console.error("Render templates failed:",error);}}
+    function addTemplateActionListeners(){document.querySelectorAll('.delete-template-btn').forEach(function(btn){btn.addEventListener('click',function(e){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}const templateId=e.currentTarget.dataset.id;openConfirmationModal('Delete Template','Sure?',async function(){try{await apiRequest(TEMPLATES_URL+templateId+'/','DELETE');closeConfirmationModal();renderTemplatesPage();}catch(error){alert("Delete template failed: "+error.message);}});});});}
+    function openUploadTemplateFormPage(){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}if(!uploadTemplateFormSection||!uploadTemplateFormTitle||!uploadTemplateForm||!templateCategoryField){console.error("Upload template DOM not found.");return;}uploadTemplateFormTitle.textContent='Upload New Template';uploadTemplateForm.reset();templateCategoryField.innerHTML='';templateCategories.forEach(function(cat){const option=document.createElement('option');option.value=cat;option.textContent=cat;templateCategoryField.appendChild(option);});if(typeof switchView==='function')switchView('uploadTemplateForm');else if(uploadTemplateFormSection)uploadTemplateFormSection.classList.remove('hidden');}
+    function closeUploadTemplateFormPage(){if(uploadTemplateForm)uploadTemplateForm.reset();if(typeof switchView==='function')switchView('templates');else if(uploadTemplateFormSection)uploadTemplateFormSection.classList.add('hidden');}
+    if(openUploadTemplateFormBtn)openUploadTemplateFormBtn.addEventListener('click',openUploadTemplateFormPage);if(cancelUploadTemplateBtn)cancelUploadTemplateBtn.addEventListener('click',closeUploadTemplateFormPage);if(cancelUploadTemplateBtnBottom)cancelUploadTemplateBtnBottom.addEventListener('click',closeUploadTemplateFormPage);
+    if(uploadTemplateForm){uploadTemplateForm.addEventListener('submit',async function(e){e.preventDefault();if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}if(!templateNameField||!templateCategoryField||!templateFileField||!templateFileField.files[0]){alert("Name, category, and file required.");return;}const formData=new FormData();formData.append('name',templateNameField.value.trim());formData.append('category',templateCategoryField.value);formData.append('file',templateFileField.files[0]);try{await apiRequest(TEMPLATES_URL,'POST',formData,true);closeUploadTemplateFormPage();renderTemplatesPage();}catch(error){alert("Upload template failed: "+error.message);console.error("Template upload error:",error);}});};
+    window.renderTemplatesPage = renderTemplatesPage; // Expose if needed
+    // --- END: Templates Page Functions ---
+
     // --- START: Confirmation Modal Functions ---
-    function openConfirmationModal(title, message, onConfirmCallback) {
-        if(confirmationModal && confirmationTitle && confirmationMessage && confirmActionBtn) {
-            confirmationTitle.textContent = title;
-            confirmationMessage.textContent = message;
-            actionToConfirm = onConfirmCallback; // Assign the callback
-            confirmationModal.classList.remove('hidden');
-        } else { console.error("Confirmation modal elements not found."); }
-    }
+    // (Copied from previous successful script)
+    function openConfirmationModal(title, message, onConfirmCallback) { if(confirmationModal && confirmationTitle && confirmationMessage && confirmActionBtn) { confirmationTitle.textContent = title; confirmationMessage.textContent = message; actionToConfirm = onConfirmCallback; confirmationModal.classList.remove('hidden'); } else { console.error("Confirmation modal elements not found."); } }
     function closeConfirmationModal() { if(confirmationModal) confirmationModal.classList.add('hidden'); actionToConfirm = null; }
     if(confirmActionBtn) confirmActionBtn.addEventListener('click', function() { if (typeof actionToConfirm === 'function') actionToConfirm(); });
     if(cancelConfirmationBtn) cancelConfirmationBtn.addEventListener('click', closeConfirmationModal);
     // --- END: Confirmation Modal Functions ---
 
-    // --- START: Switch View Function (Simplified, other views are placeholders) ---
-    function switchView(viewName) {
-        if (!currentUser && !['login', 'register'].includes(viewName)) { console.log("User not logged in, view:", viewName); updateUIForAuthState(); return; }
-        previousActiveView = activeView; activeView = viewName;
-
-        Object.values(navLinks).forEach(function(link) { if(link) link.classList.remove('active-link'); });
-        [dashboardView, taRecordsView, expertsView, templatesView, viewRecordPageSection, taRecordFormSection, uploadTemplateFormSection].forEach(function(v) { if(v) v.classList.add('hidden');});
-
-        const addBtn = document.getElementById('openAddNewRecordBtnTARecords'); if(addBtn) addBtn.style.display = 'none';
-        let title = 'TAF Database';
-        switch(viewName) {
-            case 'dashboard': title='Dashboard'; if(navDashboard)navDashboard.classList.add('active-link'); if(dashboardView)dashboardView.classList.remove('hidden'); /*renderDashboard();*/ break;
-            case 'all': case 'ongoing': case 'closed': title=\`\${viewName.charAt(0).toUpperCase()+viewName.slice(1)} Records\`; if(navLinks[viewName])navLinks[viewName].classList.add('active-link'); if(taRecordsView)taRecordsView.classList.remove('hidden'); if(currentUser && currentUser.profile.user_type==='admin'&&addBtn)addBtn.style.display='inline-flex'; renderTable(1,viewName); break;
-            case 'recordDetail': title=viewRecordPageTitle.textContent||'Record Details'; if(viewRecordPageSection)viewRecordPageSection.classList.remove('hidden'); if(navLinks[previousActiveView]) navLinks[previousActiveView].classList.add('active-link'); break;
-            case 'taRecordForm': title=formSectionTitle.textContent||'TAF Form'; if(taRecordFormSection)taRecordFormSection.classList.remove('hidden'); if(navLinks[previousActiveView]) navLinks[previousActiveView].classList.add('active-link'); break;
-            // Add cases for 'experts', 'templates' when ready
-            default: title='Dashboard'; if(navDashboard)navDashboard.classList.add('active-link'); if(dashboardView)dashboardView.classList.remove('hidden'); /*renderDashboard();*/ break;
-        }
-        if(currentViewTitle) currentViewTitle.textContent = title;
-    }
-    window.switchView = switchView; // Make accessible globally for nav links if needed by other script parts
+    // --- START: Switch View Function ---
+    // (Copied from previous successful script, ensure all views are covered)
+    function switchView(viewName){if(!currentUser&&!['login','register'].includes(viewName)){console.log("User not logged in, view:",viewName);updateUIForAuthState();return;}previousActiveView=activeView;activeView=viewName;Object.values(navLinks).forEach(function(link){if(link)link.classList.remove('active-link');});[dashboardView,taRecordsView,expertsView,templatesView,viewRecordPageSection,taRecordFormSection,uploadTemplateFormSection].forEach(function(v){if(v)v.classList.add('hidden');});const addBtn=document.getElementById('openAddNewRecordBtnTARecords');if(addBtn)addBtn.style.display='none';let title='TAF Database';switch(viewName){case 'dashboard':title='Dashboard';if(navDashboard)navDashboard.classList.add('active-link');if(dashboardView)dashboardView.classList.remove('hidden');/*renderDashboard();*/break;case 'all':case 'ongoing':case 'closed':title=\`\${viewName.charAt(0).toUpperCase()+viewName.slice(1)} Records\`;if(navLinks[viewName])navLinks[viewName].classList.add('active-link');if(taRecordsView)taRecordsView.classList.remove('hidden');if(currentUser&&currentUser.profile.user_type==='admin'&&addBtn)addBtn.style.display='inline-flex';renderTable(1,viewName);break;case 'templates':title='Document Templates';if(navTemplates)navTemplates.classList.add('active-link');if(templatesView)templatesView.classList.remove('hidden');renderTemplatesPage();break;case 'uploadTemplateForm':title='Upload Template';if(uploadTemplateFormSection)uploadTemplateFormSection.classList.remove('hidden');if(navTemplates)navTemplates.classList.add('active-link');break;case 'recordDetail':title=viewRecordPageTitle.textContent||'Record Details';if(viewRecordPageSection)viewRecordPageSection.classList.remove('hidden');if(navLinks[previousActiveView])navLinks[previousActiveView].classList.add('active-link');break;case 'taRecordForm':title=formSectionTitle.textContent||'TAF Form';if(taRecordFormSection)taRecordFormSection.classList.remove('hidden');if(navLinks[previousActiveView])navLinks[previousActiveView].classList.add('active-link');break;default:title='Dashboard';if(navDashboard)navDashboard.classList.add('active-link');if(dashboardView)dashboardView.classList.remove('hidden');/*renderDashboard();*/break;}if(currentViewTitle)currentViewTitle.textContent=title;}
+    window.switchView = switchView;
     // --- END: Switch View Function ---
 
     // --- START: Event Listeners for Navigation and Filters ---
-    if(navDashboard) navDashboard.addEventListener('click', function(e){e.preventDefault(); switchView('dashboard');});
-    if(navAllRecords) navAllRecords.addEventListener('click', function(e){e.preventDefault(); switchView('all');});
-    if(navOngoingRecords) navOngoingRecords.addEventListener('click', function(e){e.preventDefault(); switchView('ongoing');});
-    if(navClosedRecords) navClosedRecords.addEventListener('click', function(e){e.preventDefault(); switchView('closed');});
-    // Add listeners for navExperts, navTemplates when their views are ready
-
-    if(applyFiltersBtn) applyFiltersBtn.addEventListener('click', function() { if (activeView.includes('Records') || ['all','ongoing','closed'].includes(activeView)) renderTable(1, activeView);});
-    if(resetFiltersBtn) resetFiltersBtn.addEventListener('click', function() {
-        if(filterCountry) getSelectedOptions(filterCountry).forEach(function(optVal){ const opt = filterCountry.querySelector(\`option[value="\${optVal}"]\`); if(opt) opt.selected=false; }); // Crude reset for multi-select
-        if(filterExpert) filterExpert.value = ''; if(filterTheme) getSelectedOptions(filterTheme).forEach(function(optVal){ const opt = filterTheme.querySelector(\`option[value="\${optVal}"]\`); if(opt) opt.selected=false; });
-        if(filterArea) filterArea.value = ''; if(filterTypeOfTA) getSelectedOptions(filterTypeOfTA).forEach(function(optVal){ const opt = filterTypeOfTA.querySelector(\`option[value="\${optVal}"]\`); if(opt) opt.selected=false; });
-        if (activeView.includes('Records') || ['all','ongoing','closed'].includes(activeView)) renderTable(1, activeView);
-    });
+    // (Copied from previous successful script)
+    if(navDashboard)navDashboard.addEventListener('click',function(e){e.preventDefault();switchView('dashboard');});if(navAllRecords)navAllRecords.addEventListener('click',function(e){e.preventDefault();switchView('all');});if(navOngoingRecords)navOngoingRecords.addEventListener('click',function(e){e.preventDefault();switchView('ongoing');});if(navClosedRecords)navClosedRecords.addEventListener('click',function(e){e.preventDefault();switchView('closed');});if(navTemplates)navTemplates.addEventListener('click',function(e){e.preventDefault();switchView('templates');});
+    if(applyFiltersBtn)applyFiltersBtn.addEventListener('click',function(){if(activeView.includes('Records')||['all','ongoing','closed'].includes(activeView))renderTable(1,activeView);});
+    if(resetFiltersBtn)resetFiltersBtn.addEventListener('click',function(){if(filterCountry)getSelectedOptions(filterCountry).forEach(function(optVal){const opt=filterCountry.querySelector(\`option[value="\${optVal}"]\`);if(opt)opt.selected=false;});if(filterExpert)filterExpert.value='';if(filterTheme)getSelectedOptions(filterTheme).forEach(function(optVal){const opt=filterTheme.querySelector(\`option[value="\${optVal}"]\`);if(opt)opt.selected=false;});if(filterArea)filterArea.value='';if(filterTypeOfTA)getSelectedOptions(filterTypeOfTA).forEach(function(optVal){const opt=filterTypeOfTA.querySelector(\`option[value="\${optVal}"]\`);if(opt)opt.selected=false;});if(activeView.includes('Records')||['all','ongoing','closed'].includes(activeView))renderTable(1,activeView);});
     // --- END: Event Listeners ---
 
     // --- START: Initial Application Setup ---
-    async function initializeApp() {
-        createLoginButton(); createLogoutButton(); // Ensure buttons exist
-        authToken = localStorage.getItem('authToken');
-        const storedUserJSON = localStorage.getItem('currentUser');
-        if (storedUserJSON) { try { currentUser = JSON.parse(storedUserJSON); } catch(e) {localStorage.removeItem('currentUser');}}
-        if (authToken) { await fetchCurrentUser(); } // Validates token and fetches user
-        updateUIForAuthState(); // Initial UI setup based on auth state
-        if (currentUser) { switchView('dashboard'); } // Start at dashboard if logged in
-        else { updateUIForAuthState(); /* UI shows login prompt or limited view */ }
-    }
+    // (Copied from previous successful script)
+    async function initializeApp(){createLoginButton();createLogoutButton();authToken=localStorage.getItem('authToken');const storedUserJSON=localStorage.getItem('currentUser');if(storedUserJSON){try{currentUser=JSON.parse(storedUserJSON);}catch(e){localStorage.removeItem('currentUser');}}if(authToken){await fetchCurrentUser();} updateUIForAuthState();if(currentUser){switchView('dashboard');}else{updateUIForAuthState();}}
     initializeApp();
     // --- END: Initial Application Setup ---
 });</script>
