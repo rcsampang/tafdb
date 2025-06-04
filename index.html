@@ -4,1196 +4,255 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COAST TAF Contracting Database</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; 
-        }
-        .sidebar {
-            background-color: #1e3a8a; 
-            color: #e0f2fe; 
-        }
-        .sidebar a, .sidebar button:not(.filter-btn) { 
-            color: #e0f2fe;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .sidebar a:hover, .sidebar button:not(.filter-btn):hover, .sidebar .active-link {
-            background-color: #3b82f6; 
-            color: #ffffff;
-        }
-        .btn-primary {
-            background-color: #2563eb; 
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #1d4ed8; 
-        }
-        .btn-secondary {
-            background-color: #64748b; 
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #475569; 
-        }
-        .btn-danger {
-            background-color: #dc2626; 
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #b91c1c; 
-        }
-        .modal-backdrop { /* For Confirmation modal */
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        /* Styles for sections that appear as full pages */
-        .main-content-page { 
-             background-color: #ffffff;
-             border-radius: 0.75rem; /* rounded-xl */
-             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); /* shadow-xl */
-        }
-        .page-body-scrollable { 
-            overflow-y: auto;
-            flex-grow: 1; 
-            max-height: calc(100vh - 12rem); /* Adjust based on header/footer height of the page section */
-        }
-
-        select[multiple] {
-            min-height: 100px;
-        }
-        /* Custom scrollbar */
-        #sidebarFilters::-webkit-scrollbar, .page-body-scrollable::-webkit-scrollbar, #expertsView::-webkit-scrollbar, #templatesView::-webkit-scrollbar {
-            width: 8px;
-        }
-        #sidebarFilters::-webkit-scrollbar-track, .page-body-scrollable::-webkit-scrollbar-track, #expertsView::-webkit-scrollbar-track, #templatesView::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 10px;
-        }
-        #sidebarFilters::-webkit-scrollbar-track {
-             background: #1c3276; 
-        }
-        #sidebarFilters::-webkit-scrollbar-thumb, .page-body-scrollable::-webkit-scrollbar-thumb, #expertsView::-webkit-scrollbar-thumb, #templatesView::-webkit-scrollbar-thumb {
-            background: #888; 
-            border-radius: 10px;
-        }
-        #sidebarFilters::-webkit-scrollbar-thumb {
-            background: #60a5fa;
-        }
-        #sidebarFilters::-webkit-scrollbar-thumb:hover, .page-body-scrollable::-webkit-scrollbar-thumb:hover, #expertsView::-webkit-scrollbar-thumb:hover, #templatesView::-webkit-scrollbar-thumb:hover {
-            background: #555; 
-        }
-
-
-        .table th, .table td { border-color: #cbd5e1; }
-        .table th { background-color: #e2e8f0; }
-        .dashboard-section, .stats-card, .chart-container, .experts-section, .templates-section { 
-            background-color: #ffffff; border-radius: 8px; padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .dashboard-section h3, .stats-card h4, .chart-container h4, .experts-section h3, .templates-section h3 { color: #1e3a8a; }
-        .stats-card p { color: #1d4ed8; }
-        .chart-bar-label { color: #374151; }
-        .chart-bar { border-radius: 4px; transition: width 0.5s ease-in-out; }
-        .chart-bar-value { color: #ffffff; }
-
-        #sidebarFilters label { color: #93c5fd; font-weight: 500; }
-        #sidebarFilters input[type="text"], #sidebarFilters select {
-            background-color: #1e40af; border-color: #3b82f6; color: #eff6ff; 
-        }
-        #sidebarFilters input[type="text"]::placeholder { color: #93c5fd; }
-        #sidebarFilters select option { background-color: #1e40af; color: #eff6ff; }
-        #sidebarFilters select[multiple] { min-height: 80px; }
-        .clickable-id { color: #2563eb; text-decoration: underline; cursor: pointer; }
-        .clickable-id:hover { color: #1d4ed8; }
-        .detail-label { font-weight: 600; color: #4b5563; }
-        .detail-value { color: #1f2937; }
-
-        /* File Management Tabs */
-        .file-tabs button {
-            padding: 0.5rem 1rem; margin-bottom: -1px; border: 1px solid transparent;
-            border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;
-            color: #3b82f6; font-weight: 500;
-        }
-        .file-tabs button.active-tab {
-            background-color: #ffffff; border-color: #d1d5db #d1d5db #ffffff; color: #1e3a8a;
-        }
-        .file-tab-content { border: 1px solid #d1d5db; border-top: none; padding: 1rem; background-color: #ffffff; }
-        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; }
-        .file-item:last-child { border-bottom: none; }
-        .file-link {
-            color: var(--primary-color, #2563eb);
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .file-link:hover {
-            color: #1d4ed8;
-        }
-        .template-item {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: #f9fafb;
-        }
-        .template-item h4 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1e3a8a;
-            margin-bottom: 0.25rem;
-        }
-        .template-item .category {
-            font-size: 0.875rem;
-            color: #64748b;
-            margin-bottom: 0.75rem;
-        }
-        .template-item .actions button {
-            margin-right: 0.5rem;
-        }
-    </style>
-</head>
-<body class="flex h-screen antialiased text-gray-900">
-
-    <aside class="sidebar w-72 p-6 hidden md:flex md:flex-col">
-        <div class="mb-6 text-center">
-            <img src="coast-logo.png" alt="COAST Logo" class="h-12 w-auto inline-block rounded-md" 
-                 onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/1e3a8a?text=COAST&font=inter'; this.alt='COAST Logo Placeholder';"
-            >
-        </div>
-
-        <h1 class="text-2xl font-semibold text-center mb-6">COAST TAF DB</h1>
-        <nav class="space-y-2 mb-6 flex-grow"> 
-            <a href="#" id="navDashboard" class="block py-2.5 px-4 rounded-lg active-link"><i class="fas fa-tachometer-alt mr-2"></i>Technical Assistance Facility (TAF) Records</a>
-            <a href="#" id="navAllRecords" class="block py-2.5 px-4 rounded-lg"><i class="fas fa-list mr-2"></i>TA Records</a>
-            <a href="#" id="navOngoingRecords" class="block py-2.5 px-4 rounded-lg"><i class="fas fa-tasks mr-2"></i>Ongoing TAs</a>
-            <a href="#" id="navClosedRecords" class="block py-2.5 px-4 rounded-lg"><i class="fas fa-check-circle mr-2"></i>Closed TAs</a>
-            <a href="#" id="navExperts" class="block py-2.5 px-4 rounded-lg"><i class="fas fa-users-cog mr-2"></i>Experts</a>
-            <a href="#" id="navTemplates" class="block py-2.5 px-4 rounded-lg"><i class="fas fa-file-alt mr-2"></i>Templates</a>
-        </nav>
-        <div id="sidebarFilters" class="space-y-4 overflow-y-auto mb-4 max-h-[calc(100vh-300px)] pr-2"> 
-            <h3 class="text-lg font-semibold text-blue-100 mb-3 border-b border-blue-700 pb-2">Filter Records</h3>
-            <div>
-                <label for="filterCountry" class="block text-sm mb-1">Country</label>
-                <select id="filterCountry" multiple class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
-                    <option value="Philippines">Philippines</option> <option value="Indonesia">Indonesia</option> <option value="Vietnam">Vietnam</option> <option value="Mozambique">Mozambique</option> <option value="Other Countries">Other Countries</option>
-                </select>
-            </div>
-            <div>
-                <label for="filterExpert" class="block text-sm mb-1">Expert/Institution</label>
-                <input type="text" id="filterExpert" placeholder="Search expert/org..." class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
-            </div>
-            <div>
-                <label for="filterTheme" class="block text-sm mb-1">Theme</label>
-                <select id="filterTheme" multiple class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
-                    <option value="Sustainable fisheries">Sustainable fisheries</option> <option value="Sustainable Aquaculture">Sustainable Aquaculture</option> <option value="Critical Marine Habitats">Critical Marine Habitats</option> <option value="Blue Economy">Blue Economy</option> <option value="Livelihoods">Livelihoods</option> <option value="GEDSI">GEDSI</option> <option value="Climate Change Adaptation">Climate Change Adaptation</option> <option value="Others">Others</option>
-                </select>
-            </div>
-            <div>
-                <label for="filterArea" class="block text-sm mb-1">Area (Province/Region)</label>
-                <input type="text" id="filterArea" placeholder="Search area..." class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
-            </div>
-            <div>
-                <label for="filterTypeOfTA" class="block text-sm mb-1">Type of TA</label>
-                <select id="filterTypeOfTA" multiple class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
-                    <option value="Capacity-building">Capacity-building</option> <option value="Research">Research</option> <option value="Policy Support">Policy Support</option> <option value="Technical Advice">Technical Advice</option> <option value="Others">Others</option>
-                </select>
-            </div>
-            <div class="mt-4 flex flex-col space-y-2">
-                <button id="applyFiltersBtn" class="filter-btn btn-primary py-2 px-4 rounded-lg text-sm w-full">Apply Filters</button>
-                <button id="resetFiltersBtn" class="filter-btn btn-secondary py-2 px-4 rounded-lg text-sm w-full">Reset Filters</button>
-            </div>
-        </div>
-        <button id="openAddNewRecordFormBtnSidebar" class="w-full btn-primary py-2.5 px-4 rounded-lg flex items-center justify-center mt-auto"><i class="fas fa-plus-circle mr-2"></i>Add New Record</button>
-    </aside>
-    
-    <button id="mobileMenuButton" class="md:hidden fixed top-4 left-4 z-50 p-2 bg-blue-700 text-white rounded-md"><i class="fas fa-bars"></i></button>
-
-    <main class="flex-1 p-4 md:p-8 overflow-y-auto">
-        <div class="max-w-7xl mx-auto"> 
-            <div class="mb-6 flex flex-col md:flex-row justify-between items-center">
-                <h2 id="currentViewTitle" class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Technical Assistance Facility (TAF) Records</h2>
-            </div>
-
-            <section id="dashboardView" class="dashboard-section space-y-8">
-                <div><h3 class="text-2xl font-semibold mb-6">Overview Statistics</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="stats-card p-6 rounded-lg"><h4 class="text-lg font-medium text-gray-600 mb-2">Total TAs</h4><p id="statTotalTAs" class="text-4xl font-bold">0</p></div><div class="stats-card p-6 rounded-lg"><h4 class="text-lg font-medium text-gray-600 mb-2">Ongoing TAs</h4><p id="statOngoingTAs" class="text-4xl font-bold">0</p></div><div class="stats-card p-6 rounded-lg"><h4 class="text-lg font-medium text-gray-600 mb-2">Closed TAs</h4><p id="statClosedTAs" class="text-4xl font-bold">0</p></div></div></div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8"><div class="chart-container p-6 rounded-lg"><h4 class="text-xl font-semibold mb-4">TAs by Country</h4><div id="chartCountry" class="space-y-3"></div></div><div class="chart-container p-6 rounded-lg"><h4 class="text-xl font-semibold mb-4">TAs by Theme</h4><div id="chartTheme" class="space-y-3"></div></div></div>
-            </section>
-
-            <section id="taRecordsView" class="hidden space-y-8">
-                <div class="mb-4 flex justify-between items-center">
-                    <div></div> 
-                    <button id="openAddNewRecordBtnTARecords" 
-                            class="btn-primary py-2 px-4 rounded-lg inline-flex items-center justify-center">
-                        <i class="fas fa-plus-circle mr-2"></i>Add New Record
-                    </button>
-                </div>
-                <div class="bg-white shadow-xl rounded-xl overflow-x-auto w-full"> 
-                    <table class="w-full text-sm text-left text-gray-600 table">
-                        <thead class="text-xs text-gray-700 uppercase">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Record ID</th>
-                                <th scope="col" class="px-6 py-3">Title</th>
-                                <th scope="col" class="px-6 py-3">Country</th> 
-                                <th scope="col" class="px-6 py-3">Area</th>
-                                <th scope="col" class="px-6 py-3">Scope</th>
-                                <th scope="col" class="px-6 py-3">Start Date</th>
-                                <th scope="col" class="px-6 py-3">End Date</th>
-                                <th scope="col" class="px-6 py-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="taRecordsTableBody"></tbody>
-                    </table>
-                    <div id="noRecordsMessage" class="text-center p-8 text-gray-500 hidden">No records found.</div>
-                </div>
-                <div id="paginationControls" class="mt-6 flex justify-center items-center space-x-2"></div>
-            </section>
-
-            <section id="expertsView" class="hidden experts-section space-y-8">
-                <h3 class="text-2xl font-semibold">Experts Involved in TAs</h3>
-                <div class="bg-white shadow-xl rounded-xl overflow-x-auto w-full"> 
-                    <table class="w-full text-sm text-left text-gray-600 table">
-                        <thead class="text-xs text-gray-700 uppercase">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Record ID</th>
-                                <th scope="col" class="px-6 py-3">Expert / Institution</th>
-                                <th scope="col" class="px-6 py-3">TA Title</th>
-                                <th scope="col" class="px-6 py-3">Country</th>
-                                <th scope="col" class="px-6 py-3">Area</th>
-                                <th scope="col" class="px-6 py-3">Theme(s)</th>
-                                <th scope="col" class="px-6 py-3">Type of TA</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expertsTableBody"></tbody>
-                    </table>
-                    <div id="noExpertsMessage" class="text-center p-8 text-gray-500 hidden">No experts found.</div>
-                </div>
-                <div id="expertsPaginationControls" class="mt-6 flex justify-center items-center space-x-2"></div>
-            </section>
-
-            <section id="viewRecordPageSection" class="hidden main-content-page">
-                <div class="flex justify-between items-center p-6 border-b border-gray-200">
-                    <h3 id="viewRecordPageTitle" class="text-2xl font-semibold text-blue-700">TA Record Details</h3>
-                    <button id="closeViewRecordPageBtn" class="btn-secondary py-2 px-4 rounded-lg">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to TA Records
-                    </button>
-                </div>
-                <div class="page-body-scrollable p-6"> 
-                    <div id="viewRecordDetailsContainer" class="space-y-4"></div>
-                    <div id="viewRecordFileManagementSection" class="mt-8">
-                        <h4 class="text-xl font-semibold text-gray-700 mb-4 border-t pt-4">Associated Files</h4>
-                        <div class="file-tabs mb-4 flex flex-wrap border-b border-gray-200" id="viewRecordFileTabsContainer"></div>
-                        <div id="viewRecordFileTabContentContainer"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="taRecordFormSection" class="hidden main-content-page">
-                 <div class="flex justify-between items-center p-6 border-b border-gray-200">
-                    <h3 id="formSectionTitle" class="text-2xl font-semibold text-blue-700">Add New TA Record</h3>
-                    <button id="cancelFormSectionBtn" class="btn-secondary py-2 px-4 rounded-lg">
-                        <i class="fas fa-times mr-2"></i>Cancel
-                    </button>
-                </div>
-                <div class="page-body-scrollable p-6">
-                    <form id="taRecordForm">
-                        <input type="hidden" id="recordId">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <div><label for="title" class="block text-sm font-medium text-gray-700">Title <span class="text-red-500">*</span></label><input type="text" id="title" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div>
-                            <div><label for="area" class="block text-sm font-medium text-gray-700">Area</label><input type="text" id="area" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div>
-                            <div><label for="scope" class="block text-sm font-medium text-gray-700">Scope <span class="text-red-500">*</span></label><select id="scope" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"><option value="regional">Regional</option><option value="national">National</option><option value="City/Municipal">City/Municipal</option><option value="site-level">Site-level</option></select></div>
-                            <div><label for="country" class="block text-sm font-medium text-gray-700">Country <span class="text-red-500">*</span></label><select id="country" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"><option value="Philippines">Philippines</option><option value="Indonesia">Indonesia</option><option value="Vietnam">Vietnam</option><option value="Mozambique">Mozambique</option><option value="Other Countries">Other Countries</option></select></div>
-                            <div><label for="startDate" class="block text-sm font-medium text-gray-700">Start Date <span class="text-red-500">*</span></label><input type="date" id="startDate" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div>
-                            <div><label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label><input type="date" id="endDate" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div>
-                            <div class="md:col-span-2"><label for="location" class="block text-sm font-medium text-gray-700">Location</label><input type="text" id="location" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div>
-                            <div><label for="typeOfTA" class="block text-sm font-medium text-gray-700">Type of TA <span class="text-red-500">*</span></label><select id="typeOfTA" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"><option value="Capacity-building">Capacity-building</option><option value="Research">Research</option><option value="Policy Support">Policy Support</option><option value="Technical Advice">Technical Advice</option><option value="Others">Others</option></select></div>
-                            <div id="typeOfTAOtherContainer" class="hidden"><label for="typeOfTAOtherDetails" class="block text-sm font-medium text-gray-700">If Others, specify:</label><textarea id="typeOfTAOtherDetails" rows="2" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div>
-                            <div class="md:col-span-2"><label for="theme" class="block text-sm font-medium text-gray-700">Theme(s) <span class="text-red-500">*</span></label><select id="theme" multiple required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"><option value="Sustainable fisheries">Sustainable fisheries</option><option value="Sustainable Aquaculture">Sustainable Aquaculture</option><option value="Critical Marine Habitats">Critical Marine Habitats</option><option value="Blue Economy">Blue Economy</option><option value="Livelihoods">Livelihoods</option><option value="GEDSI">GEDSI</option><option value="Climate Change Adaptation">Climate Change Adaptation</option><option value="Others">Others</option></select></div>
-                            <div id="themeOtherContainer" class="md:col-span-2 hidden"><label for="themeOtherDetails" class="block text-sm font-medium text-gray-700">If "Others" Theme, specify:</label><textarea id="themeOtherDetails" rows="2" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div>
-                            <div class="md:col-span-2"><div class="flex items-center mt-2"><input id="expertsInvolved" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"><label for="expertsInvolved" class="ml-2 block text-sm font-medium text-gray-700">Experts/Institutions Involved?</label></div></div>
-                            <div id="expertsDetailsContainer" class="md:col-span-2 hidden"><label for="expertsDetails" class="block text-sm font-medium text-gray-700">Details:</label><textarea id="expertsDetails" rows="3" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div>
-                            <div class="md:col-span-2"><label for="remarks" class="block text-sm font-medium text-gray-700">Remarks</label><textarea id="remarks" rows="3" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div>
-                        </div>
-                    </form>
-                    <div id="formFileManagementSection" class="mt-8">
-                        <h4 class="text-xl font-semibold text-gray-700 mb-4 border-t pt-6">Associated Files</h4>
-                        <div class="file-tabs mb-4 flex flex-wrap border-b border-gray-200" id="formFileTabsContainer"></div>
-                        <div id="formFileTabContentContainer"></div>
-                    </div>
-                </div>
-                <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                    <button type="button" id="cancelFormSectionBtnBottom" class="btn-secondary py-2 px-5 rounded-lg">Cancel</button>
-                    <button type="submit" form="taRecordForm" class="btn-primary py-2 px-5 rounded-lg">Save Record</button>
-                </div>
-            </section>
-
-            <section id="templatesView" class="hidden templates-section space-y-6">
-                 <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-semibold">Document Templates</h3>
-                    <button id="openUploadTemplateFormBtn" class="btn-primary py-2 px-4 rounded-lg inline-flex items-center">
-                        <i class="fas fa-upload mr-2"></i>Upload New Template
-                    </button>
-                </div>
-                <div id="templateListContainer" class="space-y-4">
-                </div>
-                <div id="noTemplatesMessage" class="text-center p-8 text-gray-500 hidden">
-                    No templates uploaded yet.
-                </div>
-            </section>
-
-            <section id="uploadTemplateFormSection" class="hidden main-content-page">
-                 <div class="flex justify-between items-center p-6 border-b border-gray-200">
-                    <h3 id="uploadTemplateFormTitle" class="text-2xl font-semibold text-blue-700">Upload New Template</h3>
-                    <button id="cancelUploadTemplateBtn" class="btn-secondary py-2 px-4 rounded-lg">
-                        <i class="fas fa-times mr-2"></i>Cancel
-                    </button>
-                </div>
-                <div class="page-body-scrollable p-6">
-                    <form id="uploadTemplateForm">
-                        <div class="space-y-4">
-                            <div>
-                                <label for="templateName" class="block text-sm font-medium text-gray-700">Template Name <span class="text-red-500">*</span></label>
-                                <input type="text" id="templateName" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label for="templateCategory" class="block text-sm font-medium text-gray-700">Category <span class="text-red-500">*</span></label>
-                                <select id="templateCategory" required class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                </select>
-                            </div>
-                            <div>
-                                <label for="templateFile" class="block text-sm font-medium text-gray-700">File <span class="text-red-500">*</span></label>
-                                <input type="file" id="templateFile" required class="mt-1 w-full text-sm text-gray-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-md file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-blue-50 file:text-blue-700
-                                hover:file:bg-blue-100
-                                "/>
-                                <p class="mt-1 text-xs text-gray-500">Select the template file (e.g., .docx, .pdf, .xlsx).</p>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                    <button type="button" id="cancelUploadTemplateBtnBottom" class="btn-secondary py-2 px-5 rounded-lg">Cancel</button>
-                    <button type="submit" form="uploadTemplateForm" class="btn-primary py-2 px-5 rounded-lg">Upload Template</button>
-                </div>
-            </section>
-
-
-        </div>
-    </main>
-    
-    <div id="confirmationModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden"><div class="bg-white w-full max-w-md p-6 rounded-xl shadow-2xl"><h3 id="confirmationTitle" class="text-lg font-medium text-gray-900">Confirm Action</h3><p id="confirmationMessage" class="mt-2 text-sm text-gray-600">Are you sure?</p><div class="mt-6 flex justify-end space-x-3"><button type="button" id="cancelConfirmationBtn" class="btn-secondary py-2 px-4 rounded-md">Cancel</button><button type="button" id="confirmActionBtn" class="btn-danger py-2 px-4 rounded-md">Confirm</button></div></div></div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const taRecordFormSection = document.getElementById('taRecordFormSection'); 
-            const taRecordForm = document.getElementById('taRecordForm');
-            const cancelFormSectionBtn = document.getElementById('cancelFormSectionBtn'); 
-            const cancelFormSectionBtnBottom = document.getElementById('cancelFormSectionBtnBottom'); 
-            const openAddNewRecordFormBtnMain = document.getElementById('openAddNewRecordFormBtnMain'); 
-            // const openAddNewRecordBtnPage = document.getElementById('openAddNewRecordBtnPage'); // This ID is no longer in the main header
-            const openAddNewRecordFormBtnSidebar = document.getElementById('openAddNewRecordFormBtnSidebar'); 
-            const openAddNewRecordBtnTARecords = document.getElementById('openAddNewRecordBtnTARecords'); 
-            const formSectionTitle = document.getElementById('formSectionTitle'); 
-            
-            const taRecordsTableBody = document.getElementById('taRecordsTableBody');
-            const noRecordsMessage = document.getElementById('noRecordsMessage');
-            const paginationControls = document.getElementById('paginationControls');
-            const dashboardView = document.getElementById('dashboardView');
-            const taRecordsView = document.getElementById('taRecordsView');
-            const expertsView = document.getElementById('expertsView');
-            const expertsTableBody = document.getElementById('expertsTableBody');
-            const noExpertsMessage = document.getElementById('noExpertsMessage');
-            const expertsPaginationControls = document.getElementById('expertsPaginationControls');
-            let expertsCurrentPage = 1;
-            
-            const viewRecordPageSection = document.getElementById('viewRecordPageSection');
-            const viewRecordPageTitle = document.getElementById('viewRecordPageTitle');
-            const viewRecordDetailsContainer = document.getElementById('viewRecordDetailsContainer');
-            const closeViewRecordPageBtn = document.getElementById('closeViewRecordPageBtn');
-            const viewRecordFileManagementSection = document.getElementById('viewRecordFileManagementSection');
-            const viewRecordFileTabsContainer = document.getElementById('viewRecordFileTabsContainer');
-            const viewRecordFileTabContentContainer = document.getElementById('viewRecordFileTabContentContainer');
-            
-            const formFileManagementSection = document.getElementById('formFileManagementSection');
-            const formFileTabsContainer = document.getElementById('formFileTabsContainer');
-            const formFileTabContentContainer = document.getElementById('formFileTabContentContainer');
-            let currentFilesForForm = []; 
-
-            const templatesView = document.getElementById('templatesView');
-            const openUploadTemplateFormBtn = document.getElementById('openUploadTemplateFormBtn');
-            const templateListContainer = document.getElementById('templateListContainer');
-            const noTemplatesMessage = document.getElementById('noTemplatesMessage');
-
-            const uploadTemplateFormSection = document.getElementById('uploadTemplateFormSection');
-            const uploadTemplateForm = document.getElementById('uploadTemplateForm');
-            const uploadTemplateFormTitle = document.getElementById('uploadTemplateFormTitle');
-            const cancelUploadTemplateBtn = document.getElementById('cancelUploadTemplateBtn');
-            const cancelUploadTemplateBtnBottom = document.getElementById('cancelUploadTemplateBtnBottom');
-            const templateNameField = document.getElementById('templateName');
-            const templateCategoryField = document.getElementById('templateCategory');
-            const templateFileField = document.getElementById('templateFile');
-
-
-            let currentViewRecordId = null; 
-            const fileCategories = ["Concept Note", "Terms of Reference", "Full Proposal", "Budget TA Contract", "Deliverables/Milestone Outputs", "Invoices", "Proof of Payment", "Evaluation Report", "References", "Other Files"];
-            const templateCategories = [...fileCategories]; 
-
-            const statTotalTAs = document.getElementById('statTotalTAs');
-            const statOngoingTAs = document.getElementById('statOngoingTAs');
-            const statClosedTAs = document.getElementById('statClosedTAs');
-            const chartCountryContainer = document.getElementById('chartCountry');
-            const chartThemeContainer = document.getElementById('chartTheme');
-            const recordIdField = document.getElementById('recordId');
-            const titleField = document.getElementById('title');
-            const areaField = document.getElementById('area');
-            const scopeField = document.getElementById('scope');
-            const startDateField = document.getElementById('startDate');
-            const endDateField = document.getElementById('endDate');
-            const locationField = document.getElementById('location');
-            const countryField = document.getElementById('country');
-            const typeOfTAField = document.getElementById('typeOfTA');
-            const typeOfTAOtherContainer = document.getElementById('typeOfTAOtherContainer');
-            const typeOfTAOtherDetailsField = document.getElementById('typeOfTAOtherDetails');
-            const themeField = document.getElementById('theme');
-            const themeOtherContainer = document.getElementById('themeOtherContainer');
-            const themeOtherDetailsField = document.getElementById('themeOtherDetails');
-            const expertsInvolvedField = document.getElementById('expertsInvolved');
-            const expertsDetailsContainer = document.getElementById('expertsDetailsContainer');
-            const expertsDetailsField = document.getElementById('expertsDetails');
-            const remarksField = document.getElementById('remarks');
-            const navLinks = {
-                dashboard: document.getElementById('navDashboard'), 
-                all: document.getElementById('navAllRecords'),
-                ongoing: document.getElementById('navOngoingRecords'),
-                closed: document.getElementById('navClosedRecords'),
-                experts: document.getElementById('navExperts'),
-                templates: document.getElementById('navTemplates'), 
-            };
-            const currentViewTitle = document.getElementById('currentViewTitle');
-            let activeView = 'dashboard'; 
-            let previousActiveView = 'dashboard'; 
-
-            const filterCountry = document.getElementById('filterCountry');
-            const filterExpert = document.getElementById('filterExpert');
-            const filterTheme = document.getElementById('filterTheme');
-            const filterArea = document.getElementById('filterArea');
-            const filterTypeOfTA = document.getElementById('filterTypeOfTA');
-            const applyFiltersBtn = document.getElementById('applyFiltersBtn');
-            const resetFiltersBtn = document.getElementById('resetFiltersBtn');
-            const confirmationModal = document.getElementById('confirmationModal');
-            const confirmationTitle = document.getElementById('confirmationTitle');
-            const confirmationMessage = document.getElementById('confirmationMessage');
-            const cancelConfirmationBtn = document.getElementById('cancelConfirmationBtn');
-            const confirmActionBtn = document.getElementById('confirmActionBtn');
-            let actionToConfirm = null;
-            const mobileMenuButton = document.getElementById('mobileMenuButton');
-            const sidebar = document.querySelector('.sidebar');
-            let taRecords = JSON.parse(localStorage.getItem('taRecords')) || [];
-            let tafTemplates = JSON.parse(localStorage.getItem('tafTemplates')) || []; 
-            let editingRecordId = null;
-            const ITEMS_PER_PAGE = 10;
-            let taRecordsCurrentPage = 1;
-            const chartColors = ['#3b82f6', '#10b981', '#ef4444', '#f97316', '#8b5cf6', '#06b6d4', '#d946ef', '#65a30d'];
-
-            const addSampleData = () => {
-                if (taRecords.length === 0) {
-                    taRecords = [
-                        { id: 1, title: "Coastal Resilience Project Alpha", area: "Bicol Region", scope: "regional", startDate: "2024-01-15", endDate: "2025-12-31", location: "Legazpi City", country: "Philippines", typeOfTA: "Policy Support", themes: ["Climate Change Adaptation", "Critical Marine Habitats"], expertsInvolved: true, expertsDetails: "Dr. Cruz (UP MSI), EcoSolutions Inc.", remarks: "Phase 1 ongoing.", files: [{id: "file1_1", category: "Concept Note", name: "Alpha_Concept_v1.pdf"}, {id: "file1_2", category: "Budget TA Contract", name: "Contract_Alpha.docx"}]},
-                        { id: 2, title: "Sustainable Aquaculture Initiative", area: "Mekong Delta", scope: "national", startDate: "2023-06-01", endDate: "2024-05-30", location: "Can Tho", country: "Vietnam", typeOfTA: "Technical Advice", themes: ["Sustainable Aquaculture", "Livelihoods"], expertsInvolved: true, expertsDetails: "Dr. Nguyen Van Binh, AquaConsult Ltd.", remarks: "Completed.", files: [{id: "file2_1", category: "Deliverables/Milestone Outputs", name: "Final_Report_Aqua.pdf"}]},
-                        { id: 3, title: "Blue Economy Roadmap", area: "Pemba Province", scope: "site-level", startDate: "2025-03-01", endDate: "", location: "Pemba City", country: "Mozambique", typeOfTA: "Capacity-building", themes: ["Blue Economy"], expertsInvolved: true, expertsDetails: "Oceans United Org.", remarks: "Ongoing.", files: []},
-                    ];
-                    saveRecords();
-                }
-                if (tafTemplates.length === 0) {
-                    tafTemplates = [
-                        { id: 'tpl_cn_01', name: 'Standard Concept Note Template', category: 'Concept Note', fileName: 'concept_note_standard_v1.docx', uploadedDate: new Date().toISOString() },
-                        { id: 'tpl_tor_01', name: 'Consultant Terms of Reference', category: 'Terms of Reference', fileName: 'tor_consultant_general.pdf', uploadedDate: new Date().toISOString() },
-                        { id: 'tpl_fp_01', name: 'Full Project Proposal Guide', category: 'Full Proposal', fileName: 'full_proposal_guide_v2.docx', uploadedDate: new Date().toISOString() },
-                    ];
-                    saveTemplates();
-                }
-            };
-            
-            const saveRecords = () => localStorage.setItem('taRecords', JSON.stringify(taRecords));
-            const saveTemplates = () => localStorage.setItem('tafTemplates', JSON.stringify(tafTemplates));
-
-            const generateId = () => taRecords.length > 0 ? Math.max(...taRecords.map(r => r.id)) + 1 : 1;
-            const generateTemplateId = () => `tpl_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-            const generateFileId = () => `file_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-            const getSelectedOptions = (selectElement) => Array.from(selectElement.selectedOptions).map(option => option.value);
-            const setSelectedOptions = (selectElement, values) => {
-                if (!values) values = [];
-                Array.from(selectElement.options).forEach(option => { option.selected = values.includes(option.value); });
-            };
-            const getCurrentDate = () => new Date("2025-05-11T00:00:00");
-            const getRecordStatus = (record) => {
-                if (!record.endDate) return "Ongoing";
-                const today = getCurrentDate();
-                const endDate = new Date(record.endDate);
-                return endDate < today ? "Closed" : "Ongoing";
-            };
-            const formatDate = (dateString) => {
-                if (!dateString) return 'N/A';
-                const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                return new Date(dateString).toLocaleDateString(undefined, options);
-            };
-
-            const openTaRecordFormPage = (isEditing = false, recordToEdit = null) => {
-                formSectionTitle.textContent = isEditing ? `Edit TA Record - ID: ${recordToEdit.id}` : 'Add New TA Record';
-                if (isEditing && recordToEdit) {
-                    editingRecordId = recordToEdit.id;
-                    recordIdField.value = recordToEdit.id;
-                    titleField.value = recordToEdit.title;
-                    areaField.value = recordToEdit.area;
-                    scopeField.value = recordToEdit.scope;
-                    startDateField.value = recordToEdit.startDate;
-                    endDateField.value = recordToEdit.endDate || '';
-                    locationField.value = recordToEdit.location;
-                    countryField.value = recordToEdit.country;
-                    typeOfTAField.value = recordToEdit.typeOfTA;
-                    typeOfTAOtherDetailsField.value = recordToEdit.typeOfTAOtherDetails || '';
-                    typeOfTAOtherContainer.classList.toggle('hidden', recordToEdit.typeOfTA !== 'Others');
-                    setSelectedOptions(themeField, recordToEdit.themes);
-                    themeOtherDetailsField.value = recordToEdit.themeOtherDetails || '';
-                    themeOtherContainer.classList.toggle('hidden', !(recordToEdit.themes || []).includes('Others'));
-                    expertsInvolvedField.checked = recordToEdit.expertsInvolved;
-                    expertsDetailsField.value = recordToEdit.expertsDetails || '';
-                    expertsDetailsContainer.classList.toggle('hidden', !recordToEdit.expertsInvolved);
-                    remarksField.value = recordToEdit.remarks;
-                    currentFilesForForm = recordToEdit.files ? [...recordToEdit.files] : []; 
-                } else {
-                    editingRecordId = null;
-                    taRecordForm.reset(); 
-                    typeOfTAOtherContainer.classList.add('hidden'); 
-                    themeOtherContainer.classList.add('hidden');
-                    expertsDetailsContainer.classList.add('hidden'); 
-                    currentFilesForForm = [];
-                }
-                renderFileTabsInForm(); 
-                switchView('taRecordForm'); 
-            };
-            const closeTaRecordFormPage = () => {
-                taRecordForm.reset(); 
-                recordIdField.value = ''; 
-                editingRecordId = null;
-                typeOfTAOtherContainer.classList.add('hidden'); 
-                themeOtherContainer.classList.add('hidden');
-                expertsDetailsContainer.classList.add('hidden'); 
-                formFileTabsContainer.innerHTML = ''; 
-                formFileTabContentContainer.innerHTML = ''; 
-                currentFilesForForm = []; 
-                switchView(previousActiveView); 
-            };
-            if(cancelFormSectionBtn) cancelFormSectionBtn.addEventListener('click', closeTaRecordFormPage);
-            if(cancelFormSectionBtnBottom) cancelFormSectionBtnBottom.addEventListener('click', closeTaRecordFormPage);
-            
-            typeOfTAField.addEventListener('change', () => {
-                typeOfTAOtherContainer.classList.toggle('hidden', typeOfTAField.value !== 'Others');
-                if (typeOfTAField.value !== 'Others') typeOfTAOtherDetailsField.value = '';
-            });
-            themeField.addEventListener('change', () => {
-                const selectedThemes = getSelectedOptions(themeField);
-                themeOtherContainer.classList.toggle('hidden', !selectedThemes.includes('Others'));
-                if (!selectedThemes.includes('Others')) themeOtherDetailsField.value = '';
-            });
-            expertsInvolvedField.addEventListener('change', () => {
-                expertsDetailsContainer.classList.toggle('hidden', !expertsInvolvedField.checked);
-                if (!expertsInvolvedField.checked) expertsDetailsField.value = '';
-            });
-            
-            if(openAddNewRecordFormBtnSidebar) openAddNewRecordFormBtnSidebar.addEventListener('click', () => openTaRecordFormPage(false));
-            if(openAddNewRecordBtnTARecords) openAddNewRecordBtnTARecords.addEventListener('click', () => openTaRecordFormPage(false));
-            
-            taRecordForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const recordData = {
-                    id: editingRecordId ? parseInt(editingRecordId) : generateId(),
-                    title: titleField.value.trim(), area: areaField.value.trim(), scope: scopeField.value,
-                    startDate: startDateField.value, endDate: endDateField.value, location: locationField.value.trim(),
-                    country: countryField.value, typeOfTA: typeOfTAField.value,
-                    typeOfTAOtherDetails: typeOfTAField.value === 'Others' ? typeOfTAOtherDetailsField.value.trim() : '',
-                    themes: getSelectedOptions(themeField),
-                    themeOtherDetails: getSelectedOptions(themeField).includes('Others') ? themeOtherDetailsField.value.trim() : '',
-                    expertsInvolved: expertsInvolvedField.checked,
-                    expertsDetails: expertsInvolvedField.checked ? expertsDetailsField.value.trim() : '',
-                    remarks: remarksField.value.trim(),
-                    files: [...currentFilesForForm] 
-                };
-                if (editingRecordId) {
-                    taRecords = taRecords.map(r => r.id === recordData.id ? recordData : r);
-                } else {
-                    taRecords.push(recordData);
-                }
-                saveRecords();
-                closeTaRecordFormPage(); 
-            });
-
-            const renderHorizontalBarChart = (container, data, maxValue) => { 
-                container.innerHTML = ''; 
-                if (data.length === 0) { container.innerHTML = '<p class="text-sm text-gray-500">No data available.</p>'; return; }
-                data.forEach((item, index) => {
-                    const percentage = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
-                    const barColor = chartColors[index % chartColors.length]; 
-                    const barElement = `<div class="flex items-center"><div class="w-1/3 text-sm chart-bar-label truncate pr-2" title="${item.label}">${item.label}</div><div class="w-2/3 bg-gray-200 rounded-full h-5"><div class="chart-bar h-5 text-xs font-medium text-center p-0.5 leading-none rounded-full flex items-center justify-end pr-2" style="width: ${percentage}%; background-color: ${barColor};"><span class="chart-bar-value">${item.value}</span></div></div></div>`;
-                    container.innerHTML += barElement;
-                });
-            };
-            const renderDashboard = () => { 
-                const totalTAs = taRecords.length;
-                const ongoingTAs = taRecords.filter(r => getRecordStatus(r) === 'Ongoing').length;
-                const closedTAs = taRecords.filter(r => getRecordStatus(r) === 'Closed').length;
-                statTotalTAs.textContent = totalTAs; statOngoingTAs.textContent = ongoingTAs; statClosedTAs.textContent = closedTAs;
-                const countryCounts = taRecords.reduce((acc, record) => { acc[record.country] = (acc[record.country] || 0) + 1; return acc; }, {});
-                const countryData = Object.entries(countryCounts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value); 
-                renderHorizontalBarChart(chartCountryContainer, countryData, countryData.length > 0 ? Math.max(...countryData.map(d=>d.value)) : 0);
-                const themeCounts = taRecords.reduce((acc, record) => { (record.themes || []).forEach(theme => { acc[theme] = (acc[theme] || 0) + 1; }); return acc; }, {});
-                const themeData = Object.entries(themeCounts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value);
-                renderHorizontalBarChart(chartThemeContainer, themeData, themeData.length > 0 ? Math.max(...themeData.map(d=>d.value)) : 0);
-            };
-
-            const renderTable = (page = 1) => {
-                taRecordsTableBody.innerHTML = '';
-                noRecordsMessage.classList.add('hidden');
-                taRecordsCurrentPage = page;
-                let filteredRecords = [...taRecords];
-
-                if (activeView === 'ongoing') filteredRecords = filteredRecords.filter(r => getRecordStatus(r) === 'Ongoing');
-                else if (activeView === 'closed') filteredRecords = filteredRecords.filter(r => getRecordStatus(r) === 'Closed');
-                
-                const countryFilters = getSelectedOptions(filterCountry);
-                if (countryFilters.length > 0) filteredRecords = filteredRecords.filter(r => countryFilters.includes(r.country));
-                if (filterExpert.value.trim()) {
-                    const expertQuery = filterExpert.value.trim().toLowerCase();
-                    filteredRecords = filteredRecords.filter(r => r.expertsInvolved && r.expertsDetails.toLowerCase().includes(expertQuery));
-                }
-                const themeFilters = getSelectedOptions(filterTheme);
-                if (themeFilters.length > 0) filteredRecords = filteredRecords.filter(r => (r.themes || []).some(theme => themeFilters.includes(theme)));
-                if (filterArea.value.trim()) {
-                    const areaQuery = filterArea.value.trim().toLowerCase();
-                    filteredRecords = filteredRecords.filter(r => r.area.toLowerCase().includes(areaQuery));
-                }
-                const typeOfTAFilters = getSelectedOptions(filterTypeOfTA);
-                if (typeOfTAFilters.length > 0) filteredRecords = filteredRecords.filter(r => typeOfTAFilters.includes(r.typeOfTA));
-
-                if (filteredRecords.length === 0) {
-                    noRecordsMessage.classList.remove('hidden');
-                    renderPagination(0, page, paginationControls, renderTable); 
-                    return;
-                }
-                
-                const totalItems = filteredRecords.length;
-                const paginatedItems = filteredRecords.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-
-                paginatedItems.forEach(record => {
-                    const row = `<tr class="border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium"><span class="clickable-id view-id-btn" data-id="${record.id}">${record.id}</span></td><td class="px-6 py-4 truncate" style="max-width: 250px;" title="${record.title}">${record.title}</td><td class="px-6 py-4">${record.country}</td><td class="px-6 py-4 truncate" style="max-width: 150px;" title="${record.area}">${record.area}</td><td class="px-6 py-4">${record.scope}</td><td class="px-6 py-4">${formatDate(record.startDate)}</td><td class="px-6 py-4">${formatDate(record.endDate)}</td><td class="px-6 py-4 flex space-x-2"><button class="text-blue-600 hover:text-blue-800 edit-btn" data-id="${record.id}" title="Edit"><i class="fas fa-edit"></i></button><button class="text-red-600 hover:text-red-800 delete-btn" data-id="${record.id}" title="Delete"><i class="fas fa-trash-alt"></i></button><button class="text-gray-600 hover:text-gray-800 view-btn" data-id="${record.id}" title="View Details"><i class="fas fa-eye"></i></button></td></tr>`;
-                    taRecordsTableBody.innerHTML += row;
-                });
-                
-                renderPagination(totalItems, page, paginationControls, renderTable);
-                addTableActionListeners();
-            };
-
-            const renderExpertsTable = (page = 1) => {
-                expertsTableBody.innerHTML = '';
-                noExpertsMessage.classList.add('hidden');
-                expertsCurrentPage = page;
-
-                let recordsWithExperts = taRecords.filter(r => r.expertsInvolved && r.expertsDetails && r.expertsDetails.trim() !== "");
-                
-                const countryFilters = getSelectedOptions(filterCountry);
-                if (countryFilters.length > 0) recordsWithExperts = recordsWithExperts.filter(r => countryFilters.includes(r.country));
-                if (filterExpert.value.trim()) {
-                    const expertQuery = filterExpert.value.trim().toLowerCase();
-                    recordsWithExperts = recordsWithExperts.filter(r => r.expertsDetails.toLowerCase().includes(expertQuery));
-                }
-                const themeFilters = getSelectedOptions(filterTheme);
-                if (themeFilters.length > 0) recordsWithExperts = recordsWithExperts.filter(r => (r.themes || []).some(theme => themeFilters.includes(theme)));
-                if (filterArea.value.trim()) {
-                    const areaQuery = filterArea.value.trim().toLowerCase();
-                    recordsWithExperts = recordsWithExperts.filter(r => r.area.toLowerCase().includes(areaQuery));
-                }
-                const typeOfTAFilters = getSelectedOptions(filterTypeOfTA);
-                if (typeOfTAFilters.length > 0) recordsWithExperts = recordsWithExperts.filter(r => typeOfTAFilters.includes(r.typeOfTA));
-
-                if (recordsWithExperts.length === 0) {
-                    noExpertsMessage.classList.remove('hidden');
-                    renderPagination(0, page, expertsPaginationControls, renderExpertsTable);
-                    return;
-                }
-
-                const totalItems = recordsWithExperts.length;
-                const paginatedItems = recordsWithExperts.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-
-                paginatedItems.forEach(record => {
-                    const status = getRecordStatus(record);
-                    const statusClass = status === 'Ongoing' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
-                    const row = `<tr class="border-b hover:bg-gray-50"><td class="px-6 py-4"><span class="clickable-id view-id-btn" data-id="${record.id}">${record.id}</span></td><td class="px-6 py-4 truncate" style="max-width: 200px;" title="${record.expertsDetails}">${record.expertsDetails}</td><td class="px-6 py-4 truncate" style="max-width: 200px;" title="${record.title}">${record.title}</td><td class="px-6 py-4">${record.country}</td><td class="px-6 py-4 truncate" style="max-width: 150px;" title="${record.area}">${record.area}</td><td class="px-6 py-4 truncate" style="max-width: 150px;" title="${(record.themes || []).join(', ')}">${(record.themes || []).join(', ') || 'N/A'}</td><td class="px-6 py-4">${record.typeOfTA}</td><td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${status}</span></td></tr>`;
-                    expertsTableBody.innerHTML += row;
-                });
-                renderPagination(totalItems, page, expertsPaginationControls, renderExpertsTable);
-                addTableActionListeners();
-            };
-            
-            const renderPagination = (totalItems, currentPage, controlsContainer, renderFunction) => { 
-                controlsContainer.innerHTML = '';
-                const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-                if (totalPages <= 1) return;
-                const prevButton = document.createElement('button');
-                prevButton.innerHTML = `<i class="fas fa-chevron-left"></i> Prev`;
-                prevButton.classList.add('px-3', 'py-1', 'rounded-md', 'border', 'border-gray-300', 'bg-white', 'text-sm', 'font-medium', 'text-gray-700', 'hover:bg-gray-50');
-                if (currentPage === 1) { prevButton.disabled = true; prevButton.classList.add('opacity-50', 'cursor-not-allowed'); }
-                prevButton.addEventListener('click', () => renderFunction(currentPage - 1));
-                controlsContainer.appendChild(prevButton);
-                const pageInfo = document.createElement('span');
-                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-                pageInfo.classList.add('px-3', 'py-1', 'text-sm', 'text-gray-700');
-                controlsContainer.appendChild(pageInfo);
-                const nextButton = document.createElement('button');
-                nextButton.innerHTML = `Next <i class="fas fa-chevron-right"></i>`;
-                nextButton.classList.add('px-3', 'py-1', 'rounded-md', 'border', 'border-gray-300', 'bg-white', 'text-sm', 'font-medium', 'text-gray-700', 'hover:bg-gray-50');
-                if (currentPage === totalPages) { nextButton.disabled = true; nextButton.classList.add('opacity-50', 'cursor-not-allowed'); }
-                nextButton.addEventListener('click', () => renderFunction(currentPage + 1));
-                controlsContainer.appendChild(nextButton);
-            };
-
-            const addTableActionListeners = () => { 
-                document.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        const recordToEdit = taRecords.find(r => r.id === id);
-                        if (recordToEdit) loadRecordIntoForm(recordToEdit);
-                    });
-                });
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        openConfirmationModal('Delete Record', `Are you sure you want to delete record ID ${id}?`, () => deleteRecord(id));
-                    });
-                });
-                 document.querySelectorAll('.view-btn, .view-id-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = parseInt(e.currentTarget.dataset.id);
-                        const recordToView = taRecords.find(r => r.id === id);
-                        if (recordToView) openViewRecordPage(recordToView); 
-                    });
-                });
-            };
-            const loadRecordIntoForm = (record) => { 
-                editingRecordId = record.id; 
-                recordIdField.value = record.id; 
-                titleField.value = record.title;
-                areaField.value = record.area; 
-                scopeField.value = record.scope; 
-                startDateField.value = record.startDate;
-                endDateField.value = record.endDate || ''; 
-                locationField.value = record.location; 
-                countryField.value = record.country;
-                typeOfTAField.value = record.typeOfTA; 
-                typeOfTAOtherDetailsField.value = record.typeOfTAOtherDetails || '';
-                typeOfTAOtherContainer.classList.toggle('hidden', record.typeOfTA !== 'Others');
-                setSelectedOptions(themeField, record.themes);
-                themeOtherDetailsField.value = record.themeOtherDetails || '';
-                themeOtherContainer.classList.toggle('hidden', !(record.themes || []).includes('Others'));
-                expertsInvolvedField.checked = record.expertsInvolved;
-                expertsDetailsField.value = record.expertsDetails || '';
-                expertsDetailsContainer.classList.toggle('hidden', !record.expertsInvolved);
-                remarksField.value = record.remarks; 
-                openTaRecordFormPage(true, record); 
-            };
-            
-            const openViewRecordPage = (record) => {
-                currentViewRecordId = record.id; 
-                viewRecordPageTitle.textContent = `TA Record Details - ID: ${record.id}`;
-                let detailsHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4"><div><p><span class="detail-label">Title:</span> <span class="detail-value">${record.title || 'N/A'}</span></p></div><div><p><span class="detail-label">Area:</span> <span class="detail-value">${record.area || 'N/A'}</span></p></div><div><p><span class="detail-label">Scope:</span> <span class="detail-value">${record.scope || 'N/A'}</span></p></div><div><p><span class="detail-label">Country:</span> <span class="detail-value">${record.country || 'N/A'}</span></p></div><div><p><span class="detail-label">Start Date:</span> <span class="detail-value">${formatDate(record.startDate)}</span></p></div><div><p><span class="detail-label">End Date:</span> <span class="detail-value">${formatDate(record.endDate)}</span></p></div><div class="md:col-span-2"><p><span class="detail-label">Location:</span> <span class="detail-value">${record.location || 'N/A'}</span></p></div><div><p><span class="detail-label">Type of TA:</span> <span class="detail-value">${record.typeOfTA || 'N/A'}</span></p>${record.typeOfTA === 'Others' && record.typeOfTAOtherDetails ? `<p class="ml-4"><span class="detail-label">Details:</span> <span class="detail-value">${record.typeOfTAOtherDetails}</span></p>` : ''}</div><div class="md:col-span-2"><p><span class="detail-label">Theme(s):</span> <span class="detail-value">${(record.themes || []).join(', ') || 'N/A'}</span></p>${(record.themes || []).includes('Others') && record.themeOtherDetails ? `<p class="ml-4"><span class="detail-label">Other Theme Details:</span> <span class="detail-value">${record.themeOtherDetails}</span></p>` : ''}</div><div class="md:col-span-2"><p><span class="detail-label">Experts/Institutions Involved:</span> <span class="detail-value">${record.expertsInvolved ? 'Yes' : 'No'}</span></p>${record.expertsInvolved && record.expertsDetails ? `<p class="ml-4"><span class="detail-label">Details:</span> <span class="detail-value">${record.expertsDetails}</span></p>` : ''}</div><div class="md:col-span-2"><p><span class="detail-label">Status:</span> <span class="detail-value">${getRecordStatus(record)}</span></p></div><div class="md:col-span-2"><p><span class="detail-label">Remarks:</span></p><p class="detail-value whitespace-pre-wrap">${record.remarks || 'N/A'}</p></div></div>`;
-                viewRecordDetailsContainer.innerHTML = detailsHtml;
-                renderFileTabsInViewPage(record); 
-                switchView('recordDetail'); 
-            };
-
-            const renderFileTabsInViewPage = (record) => {
-                viewRecordFileManagementSection.classList.remove('hidden'); 
-                viewRecordFileTabsContainer.innerHTML = '';
-                fileCategories.forEach((category, index) => {
-                    const tabButton = document.createElement('button');
-                    tabButton.textContent = category;
-                    tabButton.dataset.category = category;
-                    if (index === 0) tabButton.classList.add('active-tab');
-                    tabButton.addEventListener('click', () => switchFileTabInViewPage(category, record.id));
-                    viewRecordFileTabsContainer.appendChild(tabButton);
-                });
-                if (fileCategories.length > 0) switchFileTabInViewPage(fileCategories[0], record.id);
-            };
-
-            const switchFileTabInViewPage = (category, recordId) => {
-                viewRecordFileTabsContainer.querySelectorAll('button').forEach(btn => {
-                    btn.classList.toggle('active-tab', btn.dataset.category === category);
-                });
-                viewRecordFileTabContentContainer.innerHTML = '';
-                const record = taRecords.find(r => r.id === recordId);
-                const filesForCategory = (record.files || []).filter(f => f.category === category);
-                const fileListUl = document.createElement('ul');
-                fileListUl.classList.add('list-none', 'space-y-2', 'mb-4');
-                if (filesForCategory.length === 0) {
-                    fileListUl.innerHTML = '<li class="text-gray-500">No files uploaded for this category.</li>';
-                } else {
-                    filesForCategory.forEach(file => {
-                        const listItem = document.createElement('li');
-                        listItem.classList.add('file-item');
-                        listItem.innerHTML = `<a href="#" class="file-link" data-filename="${file.name}">${file.name}</a>`; 
-                        fileListUl.appendChild(listItem);
-                    });
-                }
-                viewRecordFileTabContentContainer.appendChild(fileListUl);
-                viewRecordFileTabContentContainer.querySelectorAll('.file-link').forEach(link => {
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        alert(`Simulating opening file: ${e.target.dataset.filename}\nIn a full application, this would open or download the actual file.`);
-                    });
-                });
-            };
-            
-            const closeViewRecordPage = () => {
-                switchView('all'); 
-            };
-            if(closeViewRecordPageBtn) closeViewRecordPageBtn.addEventListener('click', closeViewRecordPage);
-
-            const renderFileTabsInForm = () => {
-                formFileTabsContainer.innerHTML = '';
-                fileCategories.forEach((category, index) => {
-                    const tabButton = document.createElement('button');
-                    tabButton.textContent = category;
-                    tabButton.dataset.category = category;
-                    if (index === 0) tabButton.classList.add('active-tab');
-                    tabButton.addEventListener('click', () => switchFileTabInForm(category));
-                    formFileTabsContainer.appendChild(tabButton);
-                });
-                if (fileCategories.length > 0) switchFileTabInForm(fileCategories[0]);
-            };
-
-            const switchFileTabInForm = (category) => {
-                formFileTabsContainer.querySelectorAll('button').forEach(btn => {
-                    btn.classList.toggle('active-tab', btn.dataset.category === category);
-                });
-                formFileTabContentContainer.innerHTML = '';
-                const filesForCategory = currentFilesForForm.filter(f => f.category === category);
-                const fileListUl = document.createElement('ul');
-                fileListUl.classList.add('list-none', 'space-y-2', 'mb-4');
-                if (filesForCategory.length === 0) {
-                    fileListUl.innerHTML = '<li class="text-gray-500">No files added for this category yet.</li>';
-                } else {
-                    filesForCategory.forEach(file => {
-                        const listItem = document.createElement('li');
-                        listItem.classList.add('file-item');
-                        listItem.innerHTML = `
-                            <span class="truncate" title="${file.name}">${file.name}</span>
-                            <button type="button" class="text-red-500 hover:text-red-700 delete-form-file-btn" data-file-id="${file.id}" title="Remove file">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        `;
-                        fileListUl.appendChild(listItem);
-                    });
-                }
-                formFileTabContentContainer.appendChild(fileListUl);
-
-                const addFileContainer = document.createElement('div');
-                addFileContainer.classList.add('mt-4');
-                const safeCategoryForId = category.replace(/[\s\/()]+/g, '-'); 
-                const fileInputId = `form-file-input-${safeCategoryForId}`;
-                addFileContainer.innerHTML = `
-                    <label for="${fileInputId}" class="btn-primary py-2 px-3 rounded-md text-sm cursor-pointer inline-flex items-center">
-                        <i class="fas fa-plus mr-2"></i> Add File to ${category}
-                    </label>
-                    <input type="file" id="${fileInputId}" class="hidden" data-category="${category}">
-                `;
-                formFileTabContentContainer.appendChild(addFileContainer);
-
-                const newFileInput = document.getElementById(fileInputId);
-                if (newFileInput) {
-                    newFileInput.addEventListener('change', handleFileUploadInForm);
-                }
-                
-                document.querySelectorAll('.delete-form-file-btn').forEach(btn => {
-                    const newBtn = btn.cloneNode(true); 
-                    btn.parentNode.replaceChild(newBtn, btn);
-                    newBtn.addEventListener('click', handleDeleteFileInForm);
-                });
-            };
-
-            const handleFileUploadInForm = (event) => {
-                const fileInput = event.target;
-                const file = fileInput.files[0];
-                if (!file) return;
-                const category = fileInput.dataset.category;
-                currentFilesForForm.push({
-                    id: generateFileId(), name: file.name, category: category
-                });
-                switchFileTabInForm(category); 
-                fileInput.value = ''; 
-            };
-            
-            const handleDeleteFileInForm = (event) => {
-                const fileIdToDelete = event.currentTarget.dataset.fileId;
-                const file = currentFilesForForm.find(f => f.id === fileIdToDelete);
-                if (file) {
-                    currentFilesForForm = currentFilesForForm.filter(f => f.id !== fileIdToDelete);
-                    switchFileTabInForm(file.category); 
-                }
-            };
-
-            const deleteRecord = (id) => { 
-                taRecords = taRecords.filter(r => r.id !== id); saveRecords();
-                if (activeView === 'dashboard') renderDashboard();
-                else if (activeView === 'experts') renderExpertsTable();
-                else renderTable(taRecordsCurrentPage);
-                closeConfirmationModal();
-            };
-
-            const openConfirmationModal = (title, message, onConfirm) => { 
-                confirmationTitle.textContent = title; confirmationMessage.textContent = message;
-                actionToConfirm = onConfirm; confirmationModal.classList.remove('hidden');
-            };
-            const closeConfirmationModal = () => { 
-                confirmationModal.classList.add('hidden'); actionToConfirm = null;
-            };
-            if(confirmActionBtn) confirmActionBtn.addEventListener('click', () => { if (actionToConfirm) actionToConfirm(); });
-            if(cancelConfirmationBtn) cancelConfirmationBtn.addEventListener('click', closeConfirmationModal);
-
-            const openUploadTemplateFormPage = (isEditing = false, templateToEdit = null) => { 
-                uploadTemplateFormTitle.textContent = isEditing ? `Edit Template - ID: ${templateToEdit.id}` : 'Upload New Template';
-                templateCategoryField.innerHTML = '';
-                templateCategories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat;
-                    option.textContent = cat;
-                    templateCategoryField.appendChild(option);
-                });
-
-                if (isEditing && templateToEdit) {
-                    templateNameField.value = templateToEdit.name;
-                    templateCategoryField.value = templateToEdit.category;
-                } else {
-                    uploadTemplateForm.reset();
-                }
-                switchView('uploadTemplateForm');
-            };
-
-            const closeUploadTemplateFormPage = () => {
-                uploadTemplateForm.reset();
-                switchView('templates');
-            };
-
-            if(openUploadTemplateFormBtn) openUploadTemplateFormBtn.addEventListener('click', () => openUploadTemplateFormPage(false));
-            if(cancelUploadTemplateBtn) cancelUploadTemplateBtn.addEventListener('click', closeUploadTemplateFormPage);
-            if(cancelUploadTemplateBtnBottom) cancelUploadTemplateBtnBottom.addEventListener('click', closeUploadTemplateFormPage);
-
-            if(uploadTemplateForm) {
-                uploadTemplateForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const newTemplate = {
-                        id: generateTemplateId(),
-                        name: templateNameField.value.trim(),
-                        category: templateCategoryField.value,
-                        fileName: templateFileField.files[0] ? templateFileField.files[0].name : 'N/A',
-                        uploadedDate: new Date().toISOString()
-                    };
-                    tafTemplates.push(newTemplate);
-                    saveTemplates();
-                    renderTemplatesPage(); 
-                    closeUploadTemplateFormPage();
-                });
-            }
-            
-            const renderTemplatesPage = () => {
-                templateListContainer.innerHTML = '';
-                noTemplatesMessage.classList.toggle('hidden', tafTemplates.length > 0);
-
-                if (tafTemplates.length === 0) return;
-
-                const templatesByCategory = tafTemplates.reduce((acc, tpl) => {
-                    (acc[tpl.category] = acc[tpl.category] || []).push(tpl);
-                    return acc;
-                }, {});
-
-                Object.keys(templatesByCategory).sort().forEach(category => {
-                    const categoryDiv = document.createElement('div');
-                    categoryDiv.classList.add('mb-6');
-                    const categoryTitle = document.createElement('h4');
-                    categoryTitle.classList.add('text-lg', 'font-semibold', 'text-gray-700', 'mb-2', 'border-b', 'pb-1');
-                    categoryTitle.textContent = category;
-                    categoryDiv.appendChild(categoryTitle);
-
-                    const ul = document.createElement('ul');
-                    ul.classList.add('space-y-3');
-                    templatesByCategory[category].forEach(tpl => {
-                        const li = document.createElement('li');
-                        li.classList.add('template-item', 'flex', 'justify-between', 'items-center');
-                        li.innerHTML = `
-                            <div>
-                                <h4 class="text-md">${tpl.name}</h4>
-                                <p class="text-xs text-gray-500">File: ${tpl.fileName} | Uploaded: ${formatDate(tpl.uploadedDate)}</p>
-                            </div>
-                            <div class="actions">
-                                <button class="view-template-btn btn-secondary text-xs py-1 px-2 rounded" data-id="${tpl.id}">View</button>
-                                <button class="download-template-btn btn-primary text-xs py-1 px-2 rounded" data-id="${tpl.id}" data-filename="${tpl.fileName}">Download</button>
-                                <button class="delete-template-btn btn-danger text-xs py-1 px-2 rounded" data-id="${tpl.id}"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        `;
-                        ul.appendChild(li);
-                    });
-                    categoryDiv.appendChild(ul);
-                    templateListContainer.appendChild(categoryDiv);
-                });
-                
-                document.querySelectorAll('.view-template-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const templateId = e.currentTarget.dataset.id;
-                        const template = tafTemplates.find(t => t.id === templateId);
-                        alert(`Simulating viewing template: ${template.name} (${template.fileName})`);
-                    });
-                });
-                document.querySelectorAll('.download-template-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const templateId = e.currentTarget.dataset.id;
-                        const template = tafTemplates.find(t => t.id === templateId);
-                        alert(`Simulating download of template: ${template.name} (${template.fileName})`);
-                    });
-                });
-                document.querySelectorAll('.delete-template-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const templateId = e.currentTarget.dataset.id;
-                        openConfirmationModal('Delete Template', `Are you sure you want to delete this template?`, () => {
-                            tafTemplates = tafTemplates.filter(t => t.id !== templateId);
-                            saveTemplates();
-                            renderTemplatesPage();
-                            closeConfirmationModal();
-                        });
-                    });
-                });
-            };
-
-
-            const switchView = (viewName) => {
-                if (viewName !== 'recordDetail' && viewName !== 'taRecordForm' && viewName !== 'uploadTemplateForm') { 
-                    previousActiveView = activeView; 
-                    activeView = viewName;
-                }
-
-                Object.values(navLinks).forEach(link => link.classList.remove('active-link', 'bg-blue-700', 'text-white'));
-                dashboardView.classList.add('hidden');
-                taRecordsView.classList.add('hidden');
-                expertsView.classList.add('hidden');
-                viewRecordPageSection.classList.add('hidden'); 
-                taRecordFormSection.classList.add('hidden'); 
-                templatesView.classList.add('hidden');
-                uploadTemplateFormSection.classList.add('hidden');
-                
-                const addNewBtnTARecords = document.getElementById('openAddNewRecordBtnTARecords'); // Button specific to TA Records page
-                
-                if(addNewBtnTARecords) addNewBtnTARecords.classList.add('hidden'); // Hide by default
-
-
-                let title = '';
-
-                if (viewName === 'dashboard') {
-                    title = 'Technical Assistance Facility (TAF) Records';
-                    navLinks.dashboard.classList.add('active-link', 'bg-blue-700', 'text-white');
-                    dashboardView.classList.remove('hidden');
-                    renderDashboard();
-                } else if (viewName === 'experts') {
-                    title = 'Experts';
-                    navLinks.experts.classList.add('active-link', 'bg-blue-700', 'text-white');
-                    expertsView.classList.remove('hidden');
-                    renderExpertsTable();
-                } else if (viewName === 'templates') {
-                    title = 'Document Templates';
-                    navLinks.templates.classList.add('active-link', 'bg-blue-700', 'text-white');
-                    templatesView.classList.remove('hidden');
-                    renderTemplatesPage();
-                } else if (viewName === 'recordDetail') { 
-                    title = viewRecordPageTitle.textContent; 
-                    viewRecordPageSection.classList.remove('hidden');
-                    if(navLinks[previousActiveView]) navLinks[previousActiveView].classList.add('active-link', 'bg-blue-700', 'text-white');
-                } else if (viewName === 'taRecordForm') {
-                    title = formSectionTitle.textContent; 
-                    taRecordFormSection.classList.remove('hidden');
-                    const linkToActivate = navLinks[previousActiveView] || navLinks.dashboard;
-                    if(linkToActivate) linkToActivate.classList.add('active-link', 'bg-blue-700', 'text-white');
-                } else if (viewName === 'uploadTemplateForm') {
-                    title = uploadTemplateFormTitle.textContent;
-                    uploadTemplateFormSection.classList.remove('hidden');
-                    if(navLinks.templates) navLinks.templates.classList.add('active-link', 'bg-blue-700', 'text-white'); 
-                }
-                else { // 'all', 'ongoing', 'closed' TA record list views
-                    title = 'TA Records'; 
-                    if (viewName === 'ongoing') title = 'Ongoing TA Records';
-                    else if (viewName === 'closed') title = 'Closed TA Records';
-                    
-                    if(navLinks[viewName]) navLinks[viewName].classList.add('active-link', 'bg-blue-700', 'text-white');
-                    taRecordsView.classList.remove('hidden');
-                    if (viewName === 'all' || viewName === 'ongoing' || viewName === 'closed') {
-                        if(addNewBtnTARecords) addNewBtnTARecords.classList.remove('hidden');
-                    }
-                    renderTable(); 
-                }
-                currentViewTitle.textContent = title;
-
-
-                if (sidebar && !sidebar.classList.contains('md:flex') && !sidebar.classList.contains('hidden')) {
-                    sidebar.classList.add('hidden');
-                    sidebar.classList.remove('fixed', 'inset-0', 'z-40', 'flex', 'flex-col');
-                    sidebar.classList.add('md:flex'); 
-                }
-            };
-
-            navLinks.dashboard.addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
-            navLinks.all.addEventListener('click', (e) => { e.preventDefault(); switchView('all'); });
-            navLinks.ongoing.addEventListener('click', (e) => { e.preventDefault(); switchView('ongoing'); });
-            navLinks.closed.addEventListener('click', (e) => { e.preventDefault(); switchView('closed'); });
-            navLinks.experts.addEventListener('click', (e) => { e.preventDefault(); switchView('experts'); });
-            navLinks.templates.addEventListener('click', (e) => { e.preventDefault(); switchView('templates'); });
-
-
-            applyFiltersBtn.addEventListener('click', () => {
-                if (activeView === 'experts') renderExpertsTable();
-                else if (activeView !== 'dashboard' && activeView !== 'recordDetail' && activeView !== 'taRecordForm' && activeView !== 'templates' && activeView !== 'uploadTemplateForm') renderTable();
-            });
-            resetFiltersBtn.addEventListener('click', () => {
-                filterCountry.querySelectorAll('option').forEach(o => o.selected = false);
-                filterExpert.value = '';
-                filterTheme.querySelectorAll('option').forEach(o => o.selected = false);
-                filterArea.value = '';
-                filterTypeOfTA.querySelectorAll('option').forEach(o => o.selected = false);
-                if (activeView === 'experts') renderExpertsTable();
-                else if (activeView !== 'dashboard' && activeView !== 'recordDetail' && activeView !== 'taRecordForm' && activeView !== 'templates' && activeView !== 'uploadTemplateForm') renderTable();
-            });
-            
-            if (mobileMenuButton && sidebar) {
-                mobileMenuButton.addEventListener('click', () => {
-                    const isDesktop = window.innerWidth >= 768; 
-                    if (isDesktop) { 
-                        sidebar.classList.toggle('hidden'); 
-                        sidebar.classList.toggle('md:flex'); 
-                    } else { 
-                        const isCurrentlyHidden = sidebar.classList.contains('hidden');
-                        if (isCurrentlyHidden) {
-                            sidebar.classList.remove('hidden');
-                            sidebar.classList.add('fixed', 'inset-0', 'z-40', 'flex', 'flex-col');
-                            sidebar.classList.remove('md:flex'); 
-                        } else {
-                            sidebar.classList.add('hidden');
-                            sidebar.classList.remove('fixed', 'inset-0', 'z-40', 'flex', 'flex-col');
-                        }
-                    }
-                });
-            }
-
-            addSampleData(); 
-            switchView('dashboard'); 
-        });
-    </script>
+<script>document.addEventListener('DOMContentLoaded', function() {
+    // --- START: Core Variables and API Config ---
+    const API_BASE_URL = '/api';
+    const AUTH_LOGIN_URL = API_BASE_URL + '/auth/login/';
+    const AUTH_LOGOUT_URL = API_BASE_URL + '/auth/logout/';
+    const AUTH_USER_DETAIL_URL = API_BASE_URL + '/auth/me/';
+    const TAF_RECORDS_URL = API_BASE_URL + '/taf-records/';
+    const ATTACHMENTS_URL = API_BASE_URL + '/attachments/';
+    const TEMPLATES_URL = API_BASE_URL + '/templates/'; // Added
+
+    let authToken = localStorage.getItem('authToken');
+    let currentUser = null;
+    let activeView = 'dashboard';
+    let previousActiveView = 'dashboard';
+    let taRecordsCurrentPage = 1;
+    const ITEMS_PER_PAGE = 10;
+    let currentViewRecordId = null;
+    let editingRecordId = null;
+    let currentFilesForForm = [];
+
+    const fileCategories = ["Concept Note", "Terms of Reference", "Full Proposal", "Budget TA Contract", "Deliverables/Milestone Outputs", "Invoices", "Proof of Payment", "Evaluation Report", "References", "Other Files"];
+    const templateCategories = [...fileCategories]; // Added for templates
+    // --- END: Core Variables and API Config ---
+
+    // --- START: DOM Element References ---
+    // (Assuming all DOM elements previously listed are here)
+    const navDashboard = document.getElementById('navDashboard');
+    const navAllRecords = document.getElementById('navAllRecords');
+    const navOngoingRecords = document.getElementById('navOngoingRecords');
+    const navClosedRecords = document.getElementById('navClosedRecords');
+    const navExperts = document.getElementById('navExperts');
+    const navTemplates = document.getElementById('navTemplates');
+    const navLinks = { dashboard: navDashboard, all: navAllRecords, ongoing: navOngoingRecords, closed: navClosedRecords, experts: navExperts, templates: navTemplates };
+
+    const openAddNewRecordFormBtnSidebar = document.getElementById('openAddNewRecordFormBtnSidebar');
+    const openAddNewRecordBtnTARecords = document.getElementById('openAddNewRecordBtnTARecords');
+    const currentViewTitle = document.getElementById('currentViewTitle');
+    let logoutButton = document.getElementById('logoutButton');
+    let loginButton = document.getElementById('loginButton');
+
+    const taRecordFormSection = document.getElementById('taRecordFormSection');
+    const taRecordForm = document.getElementById('taRecordForm');
+    // ... (all other TAF form fields) ...
+    const formSectionTitle = document.getElementById('formSectionTitle');
+    const cancelFormSectionBtn = document.getElementById('cancelFormSectionBtn');
+    const cancelFormSectionBtnBottom = document.getElementById('cancelFormSectionBtnBottom');
+    const recordIdField = document.getElementById('recordId');
+    const titleField = document.getElementById('title');
+    const areaField = document.getElementById('area');
+    const scopeField = document.getElementById('scope');
+    const startDateField = document.getElementById('startDate');
+    const endDateField = document.getElementById('endDate');
+    const locationField = document.getElementById('location');
+    const countryField = document.getElementById('country');
+    const typeOfTAField = document.getElementById('typeOfTA');
+    const typeOfTAOtherContainer = document.getElementById('typeOfTAOtherContainer');
+    const typeOfTAOtherDetailsField = document.getElementById('typeOfTAOtherDetails');
+    const themeField = document.getElementById('theme');
+    const themeOtherContainer = document.getElementById('themeOtherContainer');
+    const themeOtherDetailsField = document.getElementById('themeOtherDetails');
+    const expertsInvolvedField = document.getElementById('expertsInvolved');
+    const expertsDetailsContainer = document.getElementById('expertsDetailsContainer');
+    const expertsDetailsField = document.getElementById('expertsDetails');
+    const remarksField = document.getElementById('remarks');
+    const formFileManagementSection = document.getElementById('formFileManagementSection');
+    const formFileTabsContainer = document.getElementById('formFileTabsContainer');
+    const formFileTabContentContainer = document.getElementById('formFileTabContentContainer');
+
+
+    const taRecordsTableBody = document.getElementById('taRecordsTableBody');
+    const noRecordsMessage = document.getElementById('noRecordsMessage');
+    const paginationControls = document.getElementById('paginationControls');
+
+    const viewRecordPageSection = document.getElementById('viewRecordPageSection');
+    const viewRecordPageTitle = document.getElementById('viewRecordPageTitle');
+    // ... (all other view record page elements) ...
+    const viewRecordDetailsContainer = document.getElementById('viewRecordDetailsContainer');
+    const closeViewRecordPageBtn = document.getElementById('closeViewRecordPageBtn');
+    const viewRecordFileManagementSection = document.getElementById('viewRecordFileManagementSection');
+    const viewRecordFileTabsContainer = document.getElementById('viewRecordFileTabsContainer');
+    const viewRecordFileTabContentContainer = document.getElementById('viewRecordFileTabContentContainer');
+
+
+    const dashboardView = document.getElementById('dashboardView');
+    const taRecordsView = document.getElementById('taRecordsView');
+    const expertsView = document.getElementById('expertsView');
+    const templatesView = document.getElementById('templatesView'); // Added
+    const uploadTemplateFormSection = document.getElementById('uploadTemplateFormSection'); // Added
+
+    const filterCountry = document.getElementById('filterCountry');
+    // ... (all other filter elements) ...
+    const filterExpert = document.getElementById('filterExpert');
+    const filterTheme = document.getElementById('filterTheme');
+    const filterArea = document.getElementById('filterArea');
+    const filterTypeOfTA = document.getElementById('filterTypeOfTA');
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+    // Template page DOM elements
+    const templateListContainer = document.getElementById('templateListContainer');
+    const noTemplatesMessage = document.getElementById('noTemplatesMessage');
+    const openUploadTemplateFormBtn = document.getElementById('openUploadTemplateFormBtn');
+    // const uploadTemplateFormSection = document.getElementById('uploadTemplateFormSection'); // Already listed
+    const uploadTemplateForm = document.getElementById('uploadTemplateForm');
+    const uploadTemplateFormTitle = document.getElementById('uploadTemplateFormTitle');
+    const cancelUploadTemplateBtn = document.getElementById('cancelUploadTemplateBtn');
+    const cancelUploadTemplateBtnBottom = document.getElementById('cancelUploadTemplateBtnBottom');
+    const templateNameField = document.getElementById('templateName');
+    const templateCategoryField = document.getElementById('templateCategory');
+    const templateFileField = document.getElementById('templateFile');
+
+    const confirmationModal = document.getElementById('confirmationModal');
+    // ... (all other confirmation modal elements) ...
+    const confirmationTitle = document.getElementById('confirmationTitle');
+    const confirmationMessage = document.getElementById('confirmationMessage');
+    const cancelConfirmationBtn = document.getElementById('cancelConfirmationBtn');
+    const confirmActionBtn = document.getElementById('confirmActionBtn');
+    let actionToConfirm = null;
+    // --- END: DOM Element References ---
+
+    // --- START: Generic Helper Functions ---
+    // (Copied from previous successful script)
+    const getSelectedOptions = function(selectElement) { if(!selectElement) return []; return Array.from(selectElement.selectedOptions).map(function(option) { return option.value; }); };
+    const setSelectedOptions = function(selectElement, values) { if (!selectElement || !values || !Array.isArray(values)) values = []; Array.from(selectElement.options).forEach(function(option) { option.selected = values.includes(option.value); }); };
+    const formatDate = function(dateString) { if (!dateString) return 'N/A'; return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }); };
+    const getCurrentDate = function() { return new Date("2025-05-11T00:00:00"); };
+    const getRecordStatus = function(record) { if (!record.end_date) return "Ongoing"; const today = getCurrentDate(); const endDate = new Date(record.end_date); return endDate < today ? "Closed" : "Ongoing"; };
+    const generateFileId = function() { return \`file_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`; };
+    // --- END: Generic Helper Functions ---
+
+    // --- START: API Request Function ---
+    // (Copied from previous successful script)
+    async function apiRequest(url, method = 'GET', data = null, isFormData = false) {
+        const headers = {}; if (authToken) { headers['Authorization'] = 'Token ' + authToken; }
+        if (!isFormData && data) { headers['Content-Type'] = 'application/json'; }
+        const config = { method: method, headers: headers }; if (data) { config.body = isFormData ? data : JSON.stringify(data); }
+        try {
+            const response = await fetch(url, config); if (response.status === 204) return null;
+            const responseData = await response.json();
+            if (!response.ok) {
+                let errorMsg = responseData.detail || (typeof responseData === 'string' ? responseData : 'API error');
+                if (typeof responseData === 'object' && !responseData.detail) { errorMsg = Object.entries(responseData).map(function(entry) { return \`\${entry[0]}: \${entry[1]}\`; }).join('; ');}
+                console.error('API Error:', response.status, responseData, 'URL:', url); alert('Error (' + response.status + '): ' + errorMsg);
+                if (response.status === 401) logoutUser(false); throw new Error(errorMsg);
+            } return responseData;
+        } catch (error) { console.error('Fetch/Network Error:', error, 'URL:', url); throw error; }
+    }
+    // --- END: API Request Function ---
+
+    // --- START: Auth Functions ---
+    // (Copied from previous successful script, with button creation logic)
+    function createLoginButton() { /* ... */ } function createLogoutButton() { /* ... */ }
+    function showLoginForm() { /* ... */ } function reloadApp(){ /* ... */ }
+    async function loginUser(username, password) { /* ... */ }
+    async function logoutUser(promptLogin = true) { /* ... */ }
+    async function fetchCurrentUser() { /* ... */ }
+    function updateUIForAuthState() { /* ... */ }
+    // (Full definitions for Auth functions as previously successful)
+    function createLoginButton() { if (document.getElementById('loginButton')) return; loginButton = document.createElement('button'); loginButton.id = 'loginButton'; loginButton.textContent = 'Login'; loginButton.classList.add('btn-primary', 'py-2', 'px-4', 'rounded-lg', 'fixed', 'top-4', 'right-4', 'z-50'); loginButton.addEventListener('click', showLoginForm); document.body.appendChild(loginButton);}
+    function createLogoutButton() { if (document.getElementById('logoutButton')) return; logoutButton = document.createElement('button'); logoutButton.id = 'logoutButton'; logoutButton.textContent = 'Logout'; logoutButton.classList.add('btn-secondary', 'py-2', 'px-4', 'rounded-lg', 'text-sm', 'mt-auto'); const sb = document.querySelector('.sidebar'); if (sb) { sb.appendChild(logoutButton); } else { document.body.insertBefore(logoutButton, document.body.firstChild); } logoutButton.addEventListener('click', function() { logoutUser(); });}
+    function showLoginForm() { const main = document.querySelector('main'); if(main)main.innerHTML='<div class="p-8"><h1>Please Log In</h1></div>'; const u=prompt("Username:"); if(u===null){reloadApp();return;} const p=prompt("Password:"); if(p===null){reloadApp();return;} loginUser(u,p); }
+    function reloadApp(){ window.location.reload(); }
+    async function loginUser(username, password) { try { const d=await apiRequest(AUTH_LOGIN_URL,'POST',{username,password}); authToken=d.token;currentUser=d.user;localStorage.setItem('authToken',authToken);localStorage.setItem('currentUser',JSON.stringify(currentUser));alert('Login OK: '+currentUser.username);reloadApp(); } catch(e){alert('Login fail');localStorage.removeItem('authToken');localStorage.removeItem('currentUser');}}
+    async function logoutUser(promptLogin=true){ if(authToken){try{await apiRequest(AUTH_LOGOUT_URL,'POST');}catch(e){console.warn("Logout API fail",e);}} authToken=null;currentUser=null;localStorage.removeItem('authToken');localStorage.removeItem('currentUser'); if(promptLogin){alert('Logged out.');reloadApp();}else{updateUIForAuthState();}}
+    async function fetchCurrentUser(){if(!authToken){currentUser=null;localStorage.removeItem('currentUser');updateUIForAuthState();return null;}try{currentUser=await apiRequest(AUTH_USER_DETAIL_URL);localStorage.setItem('currentUser',JSON.stringify(currentUser));return currentUser;}catch(e){console.warn("Fetch user failed",e.message);logoutUser(false);return null;}}
+    function updateUIForAuthState(){ const isAdmin=currentUser&&currentUser.profile&&currentUser.profile.user_type==='admin'; if(openAddNewRecordFormBtnSidebar)openAddNewRecordFormBtnSidebar.style.display=isAdmin?'flex':'none'; if(openAddNewRecordBtnTARecords)openAddNewRecordBtnTARecords.style.display=isAdmin?'inline-flex':'none'; const btnUploadTpl=document.getElementById('openUploadTemplateFormBtn'); if(btnUploadTpl)btnUploadTpl.style.display=isAdmin?'inline-flex':'none'; if(currentUser){if(currentViewTitle)currentViewTitle.textContent='Welcome, '+currentUser.username; if(logoutButton)logoutButton.style.display='block';else createLogoutButton(); if(loginButton)loginButton.style.display='none'; const sb=document.querySelector('.sidebar');if(sb)sb.classList.remove('hidden'); const mainEl=document.querySelector('main');if(mainEl)mainEl.style.display='';}else{if(currentViewTitle)currentViewTitle.textContent='Please Log In'; if(logoutButton)logoutButton.style.display='none'; if(loginButton)loginButton.style.display='block';else createLoginButton(); const sb=document.querySelector('.sidebar');if(sb)sb.classList.add('hidden'); const mainEl=document.querySelector('main'); if(mainEl)mainEl.innerHTML='<div class="p-8 text-center"><h1>Access Denied</h1><p>Please log in.</p></div>';}}
+    // --- END: Auth Functions ---
+
+    // --- START: TAF Record Form Functions (Create/Edit/File Handling) ---
+    // (Copied from previous successful script)
+    function openTaRecordFormPage(isEditing = false, recordToEdit = null) { /* ... */ }
+    function closeTaRecordFormPage() { /* ... */ }
+    // (Full definitions for TAF form functions as previously successful)
+    function openTaRecordFormPage(isEditing=false,recordToEdit=null){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");if(typeof switchView==='function')switchView(previousActiveView||'all');return;}if(!taRecordForm||!formSectionTitle){console.error("TAF Form elements missing!");return;}formSectionTitle.textContent=isEditing?\`Edit TA Record - ID: \${recordToEdit.id}\`:'Add New TA Record';editingRecordId=isEditing?recordToEdit.id:null;taRecordForm.reset();currentFilesForForm=[];if(isEditing&&recordToEdit){if(recordIdField)recordIdField.value=recordToEdit.id;if(titleField)titleField.value=recordToEdit.title;if(areaField)areaField.value=recordToEdit.area||'';if(scopeField)scopeField.value=recordToEdit.scope;if(startDateField)startDateField.value=recordToEdit.start_date;if(endDateField)endDateField.value=recordToEdit.end_date||'';if(locationField)locationField.value=recordToEdit.location||'';if(countryField)countryField.value=recordToEdit.country;if(typeOfTAField)typeOfTAField.value=recordToEdit.type_of_ta;if(typeOfTAOtherDetailsField)typeOfTAOtherDetailsField.value=recordToEdit.type_of_ta_other_details||'';if(themeField)setSelectedOptions(themeField,recordToEdit.themes_list||(recordToEdit.themes_text?recordToEdit.themes_text.split(',').map(function(s){return s.trim();}):[]));if(themeOtherDetailsField)themeOtherDetailsField.value=recordToEdit.theme_other_details||'';if(expertsInvolvedField)expertsInvolvedField.checked=recordToEdit.experts_involved_flag;if(expertsDetailsField)expertsDetailsField.value=recordToEdit.experts_details_text||'';if(remarksField)remarksField.value=recordToEdit.remarks||'';if(recordToEdit.attachments&&Array.isArray(recordToEdit.attachments)){currentFilesForForm=recordToEdit.attachments.map(function(att){return{id:att.id,name:att.file_name||(att.file?att.file.split('/').pop():'file'),category:att.category,existing:true,deleted:false,url:att.file_url};});}} if(typeOfTAField&&typeOfTAOtherContainer)typeOfTAOtherContainer.classList.toggle('hidden',typeOfTAField.value!=='Others');if(themeField&&themeOtherContainer)themeOtherContainer.classList.toggle('hidden',!getSelectedOptions(themeField).includes('Others'));if(expertsInvolvedField&&expertsDetailsContainer)expertsDetailsContainer.classList.toggle('hidden',!expertsInvolvedField.checked);renderFileTabsInForm();if(typeof switchView==='function')switchView('taRecordForm');else if(taRecordFormSection)taRecordFormSection.classList.remove('hidden');}
+    function closeTaRecordFormPage(){if(taRecordForm)taRecordForm.reset();editingRecordId=null;currentFilesForForm=[];if(typeOfTAOtherContainer)typeOfTAOtherContainer.classList.add('hidden');if(themeOtherContainer)themeOtherContainer.classList.add('hidden');if(expertsDetailsContainer)expertsDetailsContainer.classList.add('hidden');if(formFileTabsContainer)formFileTabsContainer.innerHTML='';if(formFileTabContentContainer)formFileTabContentContainer.innerHTML='';if(typeof switchView==='function')switchView(previousActiveView||'all');}
+    if(cancelFormSectionBtn)cancelFormSectionBtn.addEventListener('click',closeTaRecordFormPage);if(cancelFormSectionBtnBottom)cancelFormSectionBtnBottom.addEventListener('click',closeTaRecordFormPage);if(openAddNewRecordFormBtnSidebar)openAddNewRecordFormBtnSidebar.addEventListener('click',function(){openTaRecordFormPage(false,null);});if(openAddNewRecordBtnTARecords)openAddNewRecordBtnTARecords.addEventListener('click',function(){openTaRecordFormPage(false,null);});
+    if(typeOfTAField)typeOfTAField.addEventListener('change',function(){if(typeOfTAOtherContainer)typeOfTAOtherContainer.classList.toggle('hidden',typeOfTAField.value!=='Others');});if(themeField)themeField.addEventListener('change',function(){if(themeOtherContainer)themeOtherContainer.classList.toggle('hidden',!getSelectedOptions(themeField).includes('Others'));});if(expertsInvolvedField)expertsInvolvedField.addEventListener('change',function(){if(expertsDetailsContainer)expertsDetailsContainer.classList.toggle('hidden',!expertsInvolvedField.checked);});
+    if(taRecordForm){taRecordForm.addEventListener('submit',async function(e){e.preventDefault();if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}
+    const recordData={title:titleField.value.trim(),area:areaField.value.trim(),scope:scopeField.value,start_date:startDateField.value,end_date:endDateField.value||null,location:locationField.value.trim(),country:countryField.value,type_of_ta:typeOfTAField.value,type_of_ta_other_details:typeOfTAField.value==='Others'?typeOfTAOtherDetailsField.value.trim():'',themes_list_input:getSelectedOptions(themeField),theme_other_details:getSelectedOptions(themeField).includes('Others')?themeOtherDetailsField.value.trim():'',experts_involved_flag:expertsInvolvedField.checked,experts_details_text:expertsInvolvedField.checked?expertsDetailsField.value.trim():'',remarks:remarksField.value.trim()};
+    try{const recordUrl=editingRecordId?\`\${TAF_RECORDS_URL}\${editingRecordId}/\`:TAF_RECORDS_URL;const method=editingRecordId?'PUT':'POST';const savedRecord=await apiRequest(recordUrl,method,recordData);if(savedRecord&&savedRecord.id){await handleFormFileUploads(savedRecord.id);}else{throw new Error("Failed to get valid record ID.");}closeTaRecordFormPage();if(typeof renderTable==='function')renderTable(1,'all');}catch(error){console.error("Save TAF record failed:",error);}});};
+    async function handleFormFileUploads(recordId){const newFiles=currentFilesForForm.filter(function(f){return f.fileObject&&!f.deleted;});const deletedExisting=currentFilesForForm.filter(function(f){return f.existing&&f.deleted&&f.id;});for(const fileItem of newFiles){const fd=new FormData();fd.append('file',fileItem.fileObject);fd.append('taf_record',recordId);fd.append('category',fileItem.category);try{await apiRequest(ATTACHMENTS_URL,'POST',fd,true);}catch(e){console.error(\`Upload fail \${fileItem.name}\`,e);alert(\`Upload error for \${fileItem.name}\`);}} for(const fileItem of deletedExisting){try{await apiRequest(\`\${ATTACHMENTS_URL}\${fileItem.id}/\`,'DELETE');}catch(e){console.error(\`Delete fail \${fileItem.name}\`,e);alert(\`Delete error for \${fileItem.name}\`);}}}
+    function renderFileTabsInForm(){if(!formFileTabsContainer||!formFileTabContentContainer)return;formFileTabsContainer.innerHTML='';fileCategories.forEach(function(category,index){const btn=document.createElement('button');btn.textContent=category;btn.dataset.category=category;if(index===0)btn.classList.add('active-tab');btn.addEventListener('click',function(){switchFileTabInForm(category);});formFileTabsContainer.appendChild(btn);});if(fileCategories.length>0)switchFileTabInForm(fileCategories[0]);}
+    function switchFileTabInForm(category){if(!formFileTabsContainer||!formFileTabContentContainer)return;formFileTabsContainer.querySelectorAll('button').forEach(function(btn){btn.classList.toggle('active-tab',btn.dataset.category===category);});formFileTabContentContainer.innerHTML='';const filesForCat=currentFilesForForm.filter(function(f){return f.category===category&&!f.deleted;});const ul=document.createElement('ul');ul.classList.add('list-none','space-y-2','mb-4');if(filesForCat.length===0){ul.innerHTML='<li class="text-gray-500">No files.</li>';} else{filesForCat.forEach(function(f){const li=document.createElement('li');li.classList.add('file-item');li.innerHTML=\`<span class="truncate" title="\${f.name}">\${f.name} \${f.existing?'(current)':'(new)'}</span><button type="button" class="text-red-500 delete-form-file-btn" data-file-id="\${f.id}"><i class="fas fa-trash-alt"></i></button>\`;ul.appendChild(li);});} formFileTabContentContainer.appendChild(ul);const addDiv=document.createElement('div');addDiv.classList.add('mt-4');const inputId=\`form-file-input-\${category.replace(/[^a-zA-Z0-9]/g,'-')}\`;addDiv.innerHTML=\`<label for="\${inputId}" class="btn-primary py-2 px-3 rounded-md text-sm cursor-pointer inline-flex items-center"><i class="fas fa-plus mr-2"></i>Add File</label><input type="file" id="\${inputId}" class="hidden" data-category="\${category}" multiple>\`;formFileTabContentContainer.appendChild(addDiv);document.getElementById(inputId).addEventListener('change',handleFileUploadInFormEvent);formFileTabContentContainer.querySelectorAll('.delete-form-file-btn').forEach(function(b){const newB=b.cloneNode(true);b.parentNode.replaceChild(newB,b);newB.addEventListener('click',handleDeleteFileInFormEvent);});}
+    function handleFileUploadInFormEvent(event){const files=event.target.files;if(!files.length)return;const cat=event.target.dataset.category;for(const file of files){currentFilesForForm.push({id:generateFileId(),name:file.name,category:cat,fileObject:file,existing:false,deleted:false});}switchFileTabInForm(cat);event.target.value='';}
+    function handleDeleteFileInFormEvent(event){const fileId=event.currentTarget.dataset.fileId;const idx=currentFilesForForm.findIndex(function(f){return f.id===fileId;});if(idx>-1){const f=currentFilesForForm[idx];if(f.existing){currentFilesForForm[idx].deleted=true;}else{currentFilesForForm.splice(idx,1);}switchFileTabInForm(f.category);}}
+    // --- END: TAF Record Form Functions ---
+
+    // --- START: TAF Record Listing & Viewing Functions ---
+    // (Copied from previous successful script)
+    async function renderTable(page = 1, viewType = activeView || 'all') { /* ... */ }
+    function addTableActionListeners(records) { /* ... */ }
+    async function deleteRecord(id) { /* ... */ }
+    async function openViewRecordPageById(recordId) { /* ... */ }
+    function renderFileTabsInViewPage(attachments){ /* ... */ }
+    function switchFileTabInViewPage(category, attachments){ /* ... */ }
+    function renderPaginationControlsUI(totalItems,currentPage,container,renderFn){ /* ... */ }
+    // (Full definitions for TAF list/view functions as previously successful)
+    async function renderTable(page=1,viewType=activeView||'all'){if(!currentUser){if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8">Please log in.</td></tr>';return;}if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8">Loading...</td></tr>';if(noRecordsMessage)noRecordsMessage.classList.add('hidden');taRecordsCurrentPage=page;let url=new URL(TAF_RECORDS_URL,window.location.origin);url.searchParams.append('page',page);url.searchParams.append('page_size',ITEMS_PER_PAGE);const todayStr=getCurrentDate().toISOString().split('T')[0];if(viewType==='ongoing'){url.searchParams.append('end_date__isnull','true');}else if(viewType==='closed'){url.searchParams.append('end_date__lt',todayStr);url.searchParams.append('end_date__isnull','false');} if(filterCountry&&getSelectedOptions(filterCountry).length>0)url.searchParams.append('country__in',getSelectedOptions(filterCountry).join(','));if(filterExpert&&filterExpert.value.trim())url.searchParams.append('experts_details_text__icontains',filterExpert.value.trim());if(filterTheme&&getSelectedOptions(filterTheme).length>0)getSelectedOptions(filterTheme).forEach(function(t){url.searchParams.append('themes_text__icontains',t);});if(filterArea&&filterArea.value.trim())url.searchParams.append('area__icontains',filterArea.value.trim());if(filterTypeOfTA&&getSelectedOptions(filterTypeOfTA).length>0)url.searchParams.append('type_of_ta__in',getSelectedOptions(filterTypeOfTA).join(','));url.searchParams.append('ordering','-created_at');try{const data=await apiRequest(url.toString());const records=data.results;if(taRecordsTableBody)taRecordsTableBody.innerHTML='';if(!records||records.length===0){if(noRecordsMessage)noRecordsMessage.classList.remove('hidden');renderPaginationControlsUI(0,page,paginationControls,function(np){renderTable(np,viewType);});return;} records.forEach(function(rec){const r=document.createElement('tr');r.classList.add('border-b','hover:bg-gray-50');r.innerHTML=\`<td class="px-6 py-4"><span class="clickable-id" data-id="\${rec.id}">\${rec.id}</span></td><td class="px-6 py-4 truncate" title="\${rec.title}">\${rec.title}</td><td class="px-6 py-4">\${rec.country}</td><td class="px-6 py-4 truncate" title="\${rec.area||''}">\${rec.area||'N/A'}</td><td class="px-6 py-4">\${rec.scope}</td><td class="px-6 py-4">\${formatDate(rec.start_date)}</td><td class="px-6 py-4">\${formatDate(rec.end_date)}</td><td class="px-6 py-4 flex space-x-1"><button class="view-btn text-gray-600 p-1" data-id="\${rec.id}"><i class="fas fa-eye"></i></button>\${currentUser.profile.user_type==='admin'?\`<button class="edit-btn text-blue-600 p-1" data-id="\${rec.id}"><i class="fas fa-edit"></i></button><button class="delete-btn text-red-600 p-1" data-id="\${rec.id}"><i class="fas fa-trash-alt"></i></button>\` : ''}</td>\`;taRecordsTableBody.appendChild(r);});renderPaginationControlsUI(data.count,page,paginationControls,function(np){renderTable(np,viewType);});addTableActionListeners(records);}catch(e){if(taRecordsTableBody)taRecordsTableBody.innerHTML='<tr><td colspan="8">Failed to load.</td></tr>';console.error("Render table failed",e);}}
+    function addTableActionListeners(records){document.querySelectorAll('.edit-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return;const id=parseInt(e.currentTarget.dataset.id);const rec=records.find(function(r){return r.id===id;});if(rec)openTaRecordFormPage(true,rec);});});document.querySelectorAll('.delete-btn').forEach(function(b){b.addEventListener('click',function(e){if(currentUser.profile.user_type!=='admin')return;const id=parseInt(e.currentTarget.dataset.id);openConfirmationModal('Delete Record', \`ID \${id}?\`,function(){deleteRecord(id);});});});document.querySelectorAll('.view-btn, .clickable-id').forEach(function(b){b.addEventListener('click',function(e){const id=parseInt(e.currentTarget.dataset.id);openViewRecordPageById(id);});});}
+    async function deleteRecord(id){if(currentUser.profile.user_type!=='admin'){alert("Not auth");return;}try{await apiRequest(\`\${TAF_RECORDS_URL}\${id}/\`,'DELETE');closeConfirmationModal();renderTable(taRecordsCurrentPage,activeView);}catch(e){alert("Delete error");}}
+    async function openViewRecordPageById(recordId){try{const rec=await apiRequest(\`\${TAF_RECORDS_URL}\${recordId}/\`);if(!rec){alert("Not found");return;}currentViewRecordId=rec.id;if(viewRecordPageTitle)viewRecordPageTitle.textContent=\`Details ID: \${rec.id}\`;if(viewRecordDetailsContainer)viewRecordDetailsContainer.innerHTML=\`<div><p><b>Title:</b> \${rec.title}</p><p><b>Country:</b> \${rec.country}</p> <p><b>Themes:</b> \${rec.themes_list ? rec.themes_list.join(', ') : (rec.themes_text || 'N/A')}</p>  </div>\`; /* Expand details as needed */ renderFileTabsInViewPage(rec.attachments||[]);if(typeof switchView==='function')switchView('recordDetail');else if(viewRecordPageSection)viewRecordPageSection.classList.remove('hidden');}catch(e){alert("Load record error: "+e.message); console.error(e);}}
+    if(closeViewRecordPageBtn)closeViewRecordPageBtn.addEventListener('click',function(){if(typeof switchView==='function')switchView(previousActiveView||'all');else if(viewRecordPageSection)viewRecordPageSection.classList.add('hidden');});
+    function renderFileTabsInViewPage(attachments){if(!viewRecordFileManagementSection||!viewRecordFileTabsContainer||!viewRecordFileTabContentContainer)return;viewRecordFileManagementSection.classList.remove('hidden');viewRecordFileTabsContainer.innerHTML='';fileCategories.forEach(function(cat,idx){const btn=document.createElement('button');btn.textContent=cat;btn.dataset.category=cat;btn.classList.add('px-3','py-1','border','text-sm');if(idx===0)btn.classList.add('active-tab','bg-white','text-blue-600');else btn.classList.add('bg-gray-100');btn.addEventListener('click',function(){switchFileTabInViewPage(cat,attachments);});viewRecordFileTabsContainer.appendChild(btn);});if(fileCategories.length>0)switchFileTabInViewPage(fileCategories[0],attachments);else if(viewRecordFileTabContentContainer)viewRecordFileTabContentContainer.innerHTML='<p>No categories.</p>';}
+    function switchFileTabInViewPage(category,attachments){if(!viewRecordFileTabsContainer||!viewRecordFileTabContentContainer)return;viewRecordFileTabsContainer.querySelectorAll('button').forEach(function(b){b.classList.toggle('active-tab',b.dataset.category===category);b.classList.toggle('bg-white',b.dataset.category===category);b.classList.toggle('text-blue-600',b.dataset.category===category);b.classList.toggle('bg-gray-100',b.dataset.category!==category);});viewRecordFileTabContentContainer.innerHTML='';const filesForCat=attachments.filter(function(a){return a.category===category;});if(filesForCat.length===0){viewRecordFileTabContentContainer.innerHTML='<p class="p-4 text-gray-500">No files for this category.</p>';}else{const ul=document.createElement('ul');ul.classList.add('list-none','p-4','space-y-2');filesForCat.forEach(function(a){const li=document.createElement('li');li.classList.add('file-item','flex','justify-between','items-center');li.innerHTML=\`<a href="\${a.file_url||'#'}" target="_blank" download="\${a.file_name||'file'}" class="text-blue-600 hover:underline">\${a.file_name||'File'}</a>\${currentUser.profile.user_type==='admin'?\`<button class="delete-attachment-btn text-red-500 p-1" data-attachment-id="\${a.id}"><i class="fas fa-trash-alt"></i></button>\`:''}\`;ul.appendChild(li);});viewRecordFileTabContentContainer.appendChild(ul);viewRecordFileTabContentContainer.querySelectorAll('.delete-attachment-btn').forEach(function(b){b.addEventListener('click',function(e){const id=e.currentTarget.dataset.attachmentId;openConfirmationModal('Delete File','Sure?',async function(){try{await apiRequest(\`\${ATTACHMENTS_URL}\${id}/\`,'DELETE');closeConfirmationModal();if(currentViewRecordId)openViewRecordPageById(currentViewRecordId);}catch(er){alert("Delete attach error");}});});});}}
+    function renderPaginationControlsUI(totalItems,currentPage,container,renderFn){if(!container)return;container.innerHTML='';const totalP=Math.ceil(totalItems/ITEMS_PER_PAGE);if(totalP<=1)return;const btn=function(txt,pNum,dis){const b=document.createElement('button');b.innerHTML=txt;b.classList.add('px-3','py-1','border','text-sm','rounded');if(dis){b.disabled=true;b.classList.add('opacity-50','cursor-not-allowed');}else{b.classList.add('hover:bg-gray-100');b.addEventListener('click',function(){renderFn(pNum);});}return b;};container.appendChild(btn('<i class="fas fa-chevron-left"></i> Prev',currentPage-1,currentPage===1));const pi=document.createElement('span');pi.classList.add('px-3','py-1','text-sm');pi.textContent=\`\${currentPage} / \${totalP}\`;container.appendChild(pi);container.appendChild(btn('Next <i class="fas fa-chevron-right"></i>',currentPage+1,currentPage===totalP));}
+    // --- END: TAF Record Listing & Viewing Functions ---
+
+    // --- START: Templates Page Functions ---
+    // (Definitions from templates_script_part.js)
+    async function renderTemplatesPage() { /* ... */ }
+    function addTemplateActionListeners() { /* ... */ }
+    function openUploadTemplateFormPage() { /* ... */ }
+    function closeUploadTemplateFormPage() { /* ... */ }
+    // (Full definitions for Template functions as generated before)
+    async function renderTemplatesPage(){if(!templatesView||!templateListContainer||!noTemplatesMessage){console.error("Templates DOM not found.");return;}if(!currentUser){templateListContainer.innerHTML='<p>Login to view templates.</p>';noTemplatesMessage.classList.add('hidden');return;}templateListContainer.innerHTML='<p>Loading templates...</p>';noTemplatesMessage.classList.add('hidden');try{const templatesData=await apiRequest(TEMPLATES_URL+'?page_size=100');const templates=templatesData.results||templatesData;templateListContainer.innerHTML='';if(!templates||templates.length===0){noTemplatesMessage.classList.remove('hidden');return;} const templatesByCategory=templates.reduce(function(acc,tpl){(acc[tpl.category]=acc[tpl.category]||[]).push(tpl);return acc;},{});Object.keys(templatesByCategory).sort().forEach(function(category){const catDiv=document.createElement('div');catDiv.classList.add('mb-6');const titleEl=document.createElement('h4');titleEl.classList.add('text-lg','font-semibold','text-gray-700','mb-2','border-b','pb-1');titleEl.textContent=category;catDiv.appendChild(titleEl);const ul=document.createElement('ul');ul.classList.add('space-y-3');templatesByCategory[category].forEach(function(tpl){const li=document.createElement('li');li.classList.add('template-item','flex','justify-between','items-center','p-3','border','rounded-md');li.innerHTML=\`<div><h4 class="text-md font-semibold text-blue-700">\${tpl.name}</h4><p class="text-xs text-gray-500">File: \${tpl.file_name||(tpl.file?tpl.file.split('/').pop():'N/A')} | Uploaded: \${formatDate(tpl.uploaded_at)}</p>\${tpl.description?\`<p class="text-sm text-gray-600 mt-1">\${tpl.description}</p>\`:''}</div><div class="actions space-x-2"><a href="\${tpl.file_url||'#'}" target="_blank" download class="btn-secondary text-xs py-1 px-2 rounded">View/Download</a>\${currentUser&&currentUser.profile&&currentUser.profile.user_type==='admin'?\`<button class="delete-template-btn btn-danger text-xs py-1 px-2 rounded" data-id="\${tpl.id}"><i class="fas fa-trash-alt mr-1"></i>Delete</button>\`:''}</div>\`;ul.appendChild(li);});catDiv.appendChild(ul);templateListContainer.appendChild(catDiv);});addTemplateActionListeners();}catch(error){templateListContainer.innerHTML='<p class="text-red-500">Load templates failed: '+error.message+'</p>';console.error("Render templates failed:",error);}}
+    function addTemplateActionListeners(){document.querySelectorAll('.delete-template-btn').forEach(function(btn){btn.addEventListener('click',function(e){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}const templateId=e.currentTarget.dataset.id;openConfirmationModal('Delete Template','Sure?',async function(){try{await apiRequest(TEMPLATES_URL+templateId+'/','DELETE');closeConfirmationModal();renderTemplatesPage();}catch(error){alert("Delete template failed: "+error.message);}});});});}
+    function openUploadTemplateFormPage(){if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}if(!uploadTemplateFormSection||!uploadTemplateFormTitle||!uploadTemplateForm||!templateCategoryField){console.error("Upload template DOM not found.");return;}uploadTemplateFormTitle.textContent='Upload New Template';uploadTemplateForm.reset();templateCategoryField.innerHTML='';templateCategories.forEach(function(cat){const option=document.createElement('option');option.value=cat;option.textContent=cat;templateCategoryField.appendChild(option);});if(typeof switchView==='function')switchView('uploadTemplateForm');else if(uploadTemplateFormSection)uploadTemplateFormSection.classList.remove('hidden');}
+    function closeUploadTemplateFormPage(){if(uploadTemplateForm)uploadTemplateForm.reset();if(typeof switchView==='function')switchView('templates');else if(uploadTemplateFormSection)uploadTemplateFormSection.classList.add('hidden');}
+    if(openUploadTemplateFormBtn)openUploadTemplateFormBtn.addEventListener('click',openUploadTemplateFormPage);if(cancelUploadTemplateBtn)cancelUploadTemplateBtn.addEventListener('click',closeUploadTemplateFormPage);if(cancelUploadTemplateBtnBottom)cancelUploadTemplateBtnBottom.addEventListener('click',closeUploadTemplateFormPage);
+    if(uploadTemplateForm){uploadTemplateForm.addEventListener('submit',async function(e){e.preventDefault();if(!currentUser||!currentUser.profile||currentUser.profile.user_type!=='admin'){alert("Not authorized.");return;}if(!templateNameField||!templateCategoryField||!templateFileField||!templateFileField.files[0]){alert("Name, category, and file required.");return;}const formData=new FormData();formData.append('name',templateNameField.value.trim());formData.append('category',templateCategoryField.value);formData.append('file',templateFileField.files[0]);try{await apiRequest(TEMPLATES_URL,'POST',formData,true);closeUploadTemplateFormPage();renderTemplatesPage();}catch(error){alert("Upload template failed: "+error.message);console.error("Template upload error:",error);}});};
+    window.renderTemplatesPage = renderTemplatesPage; // Expose if needed
+    // --- END: Templates Page Functions ---
+
+    // --- START: Confirmation Modal Functions ---
+    // (Copied from previous successful script)
+    function openConfirmationModal(title, message, onConfirmCallback) { if(confirmationModal && confirmationTitle && confirmationMessage && confirmActionBtn) { confirmationTitle.textContent = title; confirmationMessage.textContent = message; actionToConfirm = onConfirmCallback; confirmationModal.classList.remove('hidden'); } else { console.error("Confirmation modal elements not found."); } }
+    function closeConfirmationModal() { if(confirmationModal) confirmationModal.classList.add('hidden'); actionToConfirm = null; }
+    if(confirmActionBtn) confirmActionBtn.addEventListener('click', function() { if (typeof actionToConfirm === 'function') actionToConfirm(); });
+    if(cancelConfirmationBtn) cancelConfirmationBtn.addEventListener('click', closeConfirmationModal);
+    // --- END: Confirmation Modal Functions ---
+
+    // --- START: Switch View Function ---
+    // (Copied from previous successful script, ensure all views are covered)
+    function switchView(viewName){if(!currentUser&&!['login','register'].includes(viewName)){console.log("User not logged in, view:",viewName);updateUIForAuthState();return;}previousActiveView=activeView;activeView=viewName;Object.values(navLinks).forEach(function(link){if(link)link.classList.remove('active-link');});[dashboardView,taRecordsView,expertsView,templatesView,viewRecordPageSection,taRecordFormSection,uploadTemplateFormSection].forEach(function(v){if(v)v.classList.add('hidden');});const addBtn=document.getElementById('openAddNewRecordBtnTARecords');if(addBtn)addBtn.style.display='none';let title='TAF Database';switch(viewName){case 'dashboard':title='Dashboard';if(navDashboard)navDashboard.classList.add('active-link');if(dashboardView)dashboardView.classList.remove('hidden');/*renderDashboard();*/break;case 'all':case 'ongoing':case 'closed':title=\`\${viewName.charAt(0).toUpperCase()+viewName.slice(1)} Records\`;if(navLinks[viewName])navLinks[viewName].classList.add('active-link');if(taRecordsView)taRecordsView.classList.remove('hidden');if(currentUser&&currentUser.profile.user_type==='admin'&&addBtn)addBtn.style.display='inline-flex';renderTable(1,viewName);break;case 'templates':title='Document Templates';if(navTemplates)navTemplates.classList.add('active-link');if(templatesView)templatesView.classList.remove('hidden');renderTemplatesPage();break;case 'uploadTemplateForm':title='Upload Template';if(uploadTemplateFormSection)uploadTemplateFormSection.classList.remove('hidden');if(navTemplates)navTemplates.classList.add('active-link');break;case 'recordDetail':title=viewRecordPageTitle.textContent||'Record Details';if(viewRecordPageSection)viewRecordPageSection.classList.remove('hidden');if(navLinks[previousActiveView])navLinks[previousActiveView].classList.add('active-link');break;case 'taRecordForm':title=formSectionTitle.textContent||'TAF Form';if(taRecordFormSection)taRecordFormSection.classList.remove('hidden');if(navLinks[previousActiveView])navLinks[previousActiveView].classList.add('active-link');break;default:title='Dashboard';if(navDashboard)navDashboard.classList.add('active-link');if(dashboardView)dashboardView.classList.remove('hidden');/*renderDashboard();*/break;}if(currentViewTitle)currentViewTitle.textContent=title;}
+    window.switchView = switchView;
+    // --- END: Switch View Function ---
+
+    // --- START: Event Listeners for Navigation and Filters ---
+    // (Copied from previous successful script)
+    if(navDashboard)navDashboard.addEventListener('click',function(e){e.preventDefault();switchView('dashboard');});if(navAllRecords)navAllRecords.addEventListener('click',function(e){e.preventDefault();switchView('all');});if(navOngoingRecords)navOngoingRecords.addEventListener('click',function(e){e.preventDefault();switchView('ongoing');});if(navClosedRecords)navClosedRecords.addEventListener('click',function(e){e.preventDefault();switchView('closed');});if(navTemplates)navTemplates.addEventListener('click',function(e){e.preventDefault();switchView('templates');});
+    if(applyFiltersBtn)applyFiltersBtn.addEventListener('click',function(){if(activeView.includes('Records')||['all','ongoing','closed'].includes(activeView))renderTable(1,activeView);});
+    if(resetFiltersBtn)resetFiltersBtn.addEventListener('click',function(){if(filterCountry)getSelectedOptions(filterCountry).forEach(function(optVal){const opt=filterCountry.querySelector(\`option[value="\${optVal}"]\`);if(opt)opt.selected=false;});if(filterExpert)filterExpert.value='';if(filterTheme)getSelectedOptions(filterTheme).forEach(function(optVal){const opt=filterTheme.querySelector(\`option[value="\${optVal}"]\`);if(opt)opt.selected=false;});if(filterArea)filterArea.value='';if(filterTypeOfTA)getSelectedOptions(filterTypeOfTA).forEach(function(optVal){const opt=filterTypeOfTA.querySelector(\`option[value="\${optVal}"]\`);if(opt)opt.selected=false;});if(activeView.includes('Records')||['all','ongoing','closed'].includes(activeView))renderTable(1,activeView);});
+    // --- END: Event Listeners ---
+
+    // --- START: Initial Application Setup ---
+    // (Copied from previous successful script)
+    async function initializeApp(){createLoginButton();createLogoutButton();authToken=localStorage.getItem('authToken');const storedUserJSON=localStorage.getItem('currentUser');if(storedUserJSON){try{currentUser=JSON.parse(storedUserJSON);}catch(e){localStorage.removeItem('currentUser');}}if(authToken){await fetchCurrentUser();} updateUIForAuthState();if(currentUser){switchView('dashboard');}else{updateUIForAuthState();}}
+    initializeApp();
+    // --- END: Initial Application Setup ---
+});</script>
 </body>
 </html>
